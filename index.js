@@ -17,14 +17,17 @@ var configFileName = 'default-config.json',
  * Migration template.
  */
 var template = [
-    ''
-    , 'var mongodb = require(\'mongodb\');'
+    , 'exports.up = function(dbContext, next){'
+    , '    var db = dbContext.db, '
+    , '        mongodb = dbContext.mongodb;'
     , ''
-    , 'exports.up = function(db, next){'
     , '    next();'
     , '};'
     , ''
     , 'exports.down = function(db, next){'
+    , '    var db = dbContext.db, '
+    , '        mongodb = dbContext.mongodb;'
+    , ''
     , '    next();'
     , '};'
     , ''
@@ -164,31 +167,6 @@ function runMongoMigrate(options, direction, migrationEnd) {
         var fullPath = 'migrations' + path.sep + name + '.js';
         log('create', join(cwd, fullPath));
         fs.writeFileSync(fullPath, template);
-        installMongoDbForMigrations();
-    }
-
-    /**
-     * If mongodb has not already been installed in the migrations folder then install it to allow the migration scripts access to the api
-     */
-    function installMongoDbForMigrations() {
-        var modulePath = '.' + path.sep + 'migrations' + path.sep + 'node_modules' + path.sep;
-
-        fs.exists(modulePath + 'mongodb', function(exists){
-            if (!exists) {
-                var config = npm.config;
-                config.prefix = modulePath;
-
-                npm.load(config, function(err, data){
-                    npm.commands.install(['mongodb'], function(er, data) {
-                        if (err) {
-                            log('error', 'could not install mongodb into the migrations folder');
-                        } else {
-                            log('npm installed', 'mongodb');
-                        }
-                    });
-                });
-            }
-        });
     }
 
     /**
@@ -221,7 +199,7 @@ function runMongoMigrate(options, direction, migrationEnd) {
                     migrationCollection: migrationCollection
                 });
                 migrations(direction, lastMigrationNum, migrateTo).forEach(function(path){
-                    var mod = require(cwd + '/' + path);
+                    var mod = require(cwd + '/' + path); // Import the migration file
                     migrate({
                         num: parseInt(path.split('/')[1].match(/^(\d+)/)[0], 10),
                         title: path,
