@@ -54,7 +54,7 @@ For example:
 	$ node mongo-migrate -runmm create add-owners
 ```
 
-The first call creates `./migrations/0005-add-pets.js`, which we can populate:
+The first call creates `./migrations/{timestamp in milliseconds)-add-pets.js`, which we can populate:
 ```
 exports.up = function (db, next) {
 	var pets = mongodb.Collection(db, 'pets');
@@ -67,7 +67,7 @@ exports.down = function (db, next) {
 };
 ```
 
-The second creates `./migrations/0010-add-owners.js`, which we can populate:
+The second creates `./migrations/{timestamp in milliseconds}-add-owners.js`, which we can populate:
 ```
 	exports.up = function(db, next){
 		var owners = mongodb.Collection(db, 'owners');
@@ -85,8 +85,8 @@ When first running the migrations, all will be executed in sequence.
 
 ```
 	node mongo-migrate -runmm
-	up : migrations/0005-add-pets.js
-	up : migrations/0010-add-owners.js
+	up : migrations/1385138999835-add-pets.js
+	up : migrations/1385139017040-add-owners.js
 	migration : complete
 ```
 
@@ -99,14 +99,14 @@ Subsequent attempts will simply output "complete", as they have already been exe
 If we were to create another migration using `mongo-migrate create coolest-owner`, and then execute migrations again, we would execute only those not previously executed:
 ```
 	$ node mongo-migrate -runmm
-	up : migrations/0015-coolest-owner
+	up : migrations/1385139017041-coolest-owner
 ```
 
 If we were to then migrate using `mongo-migrate down 5`. This means to run from current revision, which in this case would be `0015-coolecst-owner`, down to revision number 5. Note that you can use either the revision number, or then full revision name `0005-add-pets`
 ```
 	$ node mongo-migrate -runmm down 5
-	down : migrations/0015-coolest-owner
-	down : migrations/0010-add-owners
+	down : migrations/1385139017041-coolest-owner
+	down : migrations/1385139017040-add-owners
 ```
 
 ## Configuration

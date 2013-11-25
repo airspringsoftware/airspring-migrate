@@ -97,16 +97,6 @@ function slugify(str) {
 	return str.replace(/\s+/g, '-');
 }
 
-/**
- * Pad the given number.
- *
- * @param {Number} n
- * @return {String}
- */
-function pad(n) {
-	return Array(5 - n.toString().length).join('0') + n;
-}
-
 function runMongoMigrate(direction, migrationEnd) {
 	if (typeof direction !== 'undefined') {
 		options.command = direction;
@@ -209,18 +199,10 @@ function runMongoMigrate(direction, migrationEnd) {
 		 * create [title]
 		 */
 		create: function(){
-			var migrations = fs.readdirSync('migrations').filter(function(file){
-				return file.match(/^\d+/);
-			}).map(function(file){
-						return parseInt(file.match(/^(\d+)/)[1], 10);
-					}).sort(function(a, b){
-						return a - b;
-					});
-
-			var curr = pad((migrations.pop() || 0) + 5),
-					title = slugify([].slice.call(arguments).join(' '));
-			title = title ? curr + '-' + title : curr;
-			create(title);
+            var curr = Date.now(),
+                title = slugify([].slice.call(arguments).join(' '));
+            title = title ? curr + '-' + title : curr;
+            create(title);
 		}
 	};
 
