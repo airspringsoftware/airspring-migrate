@@ -17,11 +17,10 @@ var options = { args: [] };
  */
 var usage = [
     ''
-    , '  Usage: migrate [options] [command]'
+    , '  Usage: mongo-migrate [options] [command]'
     , ''
     , '  Options:'
     , ''
-    , '     -runmm, --runMongoMigrate   Run the migration from the command line',
     , '     -c, --chdir <path>    		change the working directory'
     , '     -cfg, --config <path> 		DB config file name'
     , '     -dbn, --dbPropName <string> Property name for database connection in config file'
