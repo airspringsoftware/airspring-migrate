@@ -125,7 +125,7 @@ The default configuration filename is `default-config.json`. If you wish to use 
 ```
 
 ### Config file property name
-Inside the configuration file, mongo-migrate expects the database connection information to be nested inside an object. The default object name is `mongoAppDb`. If you wish to change this you can use the `-dbn <string>` option:
+Inside the configuration file, mongo-migrate expects the database connection information to be nested inside an object. The default object name is `connectionOptions`. If you wish to change this you can use the `-dbn <string>` option:
 ```
 	$ mongo-migrate -dbn dbSettings up
 	migration : complete

@@ -11,27 +11,13 @@ var previousWorkingDirectory = process.cwd(),
     cwd = process.cwd();
 
 var configFileName = 'default-config.json',
-    dbProperty = 'mongoAppDb';
+    dbProperty = 'connectionOptions',
+    defaultDriverFileName = 'driver.js';
 
 /**
- * Migration template.
+ * Default migration template.
  */
-var template = [
-    , 'exports.up = function(dbContext, next){'
-    , '    var db = dbContext.db, '
-    , '        mongodb = dbContext.mongodb;'
-    , ''
-    , '    next();'
-    , '};'
-    , ''
-    , 'exports.down = function(db, next){'
-    , '    var db = dbContext.db, '
-    , '        mongodb = dbContext.mongodb;'
-    , ''
-    , '    next();'
-    , '};'
-    , ''
-].join('\n');
+var defaultTemplate = '';
 
 /**
  * Log a keyed message.
@@ -48,6 +34,12 @@ function slugify(str) {
 }
 
 function runMongoMigrate(options, direction, migrationEnd) {
+    var config = require(cwd + path.sep + configFileName), // Convert the database config file to an object
+        dbOptions = config[dbProperty], // Get the database config options
+        dbDriverName = dbOptions.driver ||  defaultDriverFileNamee, // Get the database drivers file name
+        driver = require(cwd + path.sep + dbDriverName),
+        template = typeof dbOptions.template === 'undefined' ? defaultTemplate : dbOptions.template.join('\n'); // Get the database driver
+
     if (typeof options === 'undefined') options = { args: [] };
 
     if (typeof direction !== 'undefined') {
@@ -175,16 +167,19 @@ function runMongoMigrate(options, direction, migrationEnd) {
      * @param {String} direction
      */
     function performMigration(direction, migrateTo) {
-        var db = require('./lib/db');
-        db.getConnection(require(cwd + path.sep + configFileName)[dbProperty], function (err, db) {
-            var migrationCollection = db.migrationCollection,
-                dbConnection = db.connection;
+
+        driver.getConnection(dbOptions, function (err, db) {
+            /* var migrationCollection = db.migrationCollection,
+                dbConnection = db.connection,
+                requirements = db.requirements;
+            */
+
             if (err) {
                 console.error('Error connecting to database');
                 process.exit(1);
             }
 
-            migrationCollection.find({}).sort({num: -1}).limit(1).toArray(function (err, migrationsRun) {
+            db.migrationCollection.find({}).sort({num: -1}).limit(1).toArray(function (err, migrationsRun) {
                 if (err) {
                     console.error('Error querying migration collection', err);
                     process.exit(1);
@@ -195,8 +190,7 @@ function runMongoMigrate(options, direction, migrationEnd) {
 
                 migrate({
                     migrationTitle: 'migrations/.migrate',
-                    db: dbConnection,
-                    migrationCollection: migrationCollection
+                    db: db
                 });
                 migrations(direction, lastMigrationNum, migrateTo).forEach(function(path){
                     var mod = require(cwd + '/' + path); // Import the migration file
