@@ -5,7 +5,7 @@ Built with a starting framework from: https://github.com/visionmedia/node-migrat
 
 
 ## Installation
-	$ npm install airspring-migrate
+	$ npm install -g git+https://github.com/chriswininger/airspring-migrate.git
 	
 ##Usage
 ```
