@@ -1,15 +1,15 @@
-#mongo-migrate
+#airspring-migrate
 =============
 
 Built with a starting framework from: https://github.com/visionmedia/node-migrate
 
 
 ## Installation
-	$ npm install mongo-migrate
+	$ npm install airspring-migrate
 	
 ##Usage
 ```
-Usage: mongo-migrate [options] [command]
+Usage: airspring-migrate [options] [command]
 
 Options:
 	-c, --chdir <path>				Change the working directory (if you wish to store your migrations outside of this folder
@@ -31,7 +31,7 @@ Commands:
 ```
 
 ##Creating Migrations
-To create a migration execute with `node mongo-migrate create` and optionally a title. mongo-migrate will create a node module within `./migrations/` which contains the following two exports:
+To create a migration execute with `node airspring-migrate create` and optionally a title. airspring-migrate will create a node module within `./migrations/` which contains the following two exports:
 ```
 var mongodb = require('mongodb');
 
@@ -49,8 +49,8 @@ All you have to do is populate these, invoking `next()` when complete, and you a
 For example:
 
 ```
-	$ mongo-migrate create add-pets
-	$ mongo-migrate create add-owners
+	$ airspring-migrate create add-pets
+	$ airspring-migrate create add-owners
 ```
 
 The first call creates `./migrations/{timestamp in milliseconds)-add-pets.js`, which we can populate:
@@ -83,27 +83,27 @@ The second creates `./migrations/{timestamp in milliseconds}-add-owners.js`, whi
 When first running the migrations, all will be executed in sequence.
 
 ```
-	mongo-migrate
+	airspring-migrate
 	up : migrations/1385138999835-add-pets.js
 	up : migrations/1385139017040-add-owners.js
 	migration : complete
 ```
 
-Subsequent attempts will simply output "complete", as they have already been executed on the given database. `mongo-migrate` knows this because it stores migrations already run against the database in the `migrations` collection.
+Subsequent attempts will simply output "complete", as they have already been executed on the given database. `airspring-migrate` knows this because it stores migrations already run against the database in the `migrations` collection.
 ```
-	$ mongo-migrate
+	$ airspring-migrate
 	migration : complete
 ```
 
-If we were to create another migration using `mongo-migrate create coolest-owner`, and then execute migrations again, we would execute only those not previously executed:
+If we were to create another migration using `airspring-migrate create coolest-owner`, and then execute migrations again, we would execute only those not previously executed:
 ```
-	$ mongo-migrate
+	$ airspring-migrate
 	up : migrations/1385139017041-coolest-owner
 ```
 
-If we were to then migrate using `mongo-migrate down 5`. This means to run from current revision, which in this case would be `0015-coolecst-owner`, down to revision number 5. Note that you can use either the revision number, or then full revision name `0005-add-pets`
+If we were to then migrate using `airspring-migrate down 5`. This means to run from current revision, which in this case would be `0015-coolecst-owner`, down to revision number 5. Note that you can use either the revision number, or then full revision name `0005-add-pets`
 ```
-	$ mongo-migrate down 5
+	$ airspring-migrate down 5
 	down : migrations/1385139017041-coolest-owner
 	down : migrations/1385139017040-add-owners
 ```
@@ -112,25 +112,25 @@ If we were to then migrate using `mongo-migrate down 5`. This means to run from 
 ### Working Directory
 The options for connecting to the database are read in from a file. You can configure where the file is read in from and where the migration directory root is by the `-c <path>` option.
 ```
-	$ mongo-migrate -c ../.. up
+	$ airspring-migrate -c ../.. up
 	migration : complete
 ```
-This would set the working directory two levels above the mongo-migrate directory, such as if you included it into another project and it was nested in the node_modules folder.
+This would set the working directory two levels above the airspring-migrate directory, such as if you included it into another project and it was nested in the node_modules folder.
 
 ### Config filename
 The default configuration filename is `default-config.json`. If you wish to use a different filename, use the `-cfg <filename>` option:
 ```
-	$ mongo-migrate -cfg my-config.json up
+	$ airspring-migrate -cfg my-config.json up
 	migration : complete
 ```
 
 ### Config file property name
-Inside the configuration file, mongo-migrate expects the database connection information to be nested inside an object. The default object name is `connectionOptions`. If you wish to change this you can use the `-dbn <string>` option:
+Inside the configuration file, airspring-migrate expects the database connection information to be nested inside an object. The default object name is `connectionOptions`. If you wish to change this you can use the `-dbn <string>` option:
 ```
-	$ mongo-migrate -dbn dbSettings up
+	$ airspring-migrate -dbn dbSettings up
 	migration : complete
 ```
-This would tell mongo-migrate your config file looks something like:
+This would tell airspring-migrate your config file looks something like:
 ```
 	{
 		dbSettings: {

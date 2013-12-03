@@ -1,5 +1,5 @@
 {
-    "name": "mongo-migrate",
+    "name": "airspring-migrate",
     "version": "0.0.6",
     "description": "Migration framework for mongo in node",
     "keywords": [
@@ -8,15 +8,15 @@
         "migrations"
     ],
     "author": {
-        "name": "Austin Floyd",
-        "email": "austin.floyd@sparcedge.com"
+        "name": "Chris Wininger; Austin Floyd",
+        "email": "cwininger@airspringsoftware.com; austin.floyd@sparcedge.com;"
     },
     "repository": {
         "type": "git",
-        "url": "git://github.com/afloyd/mongo-migrate"
+        "url": "https://github.com/chriswininger/airspring-migrate.git"
     },
     "bin": {
-        "mongo-migrate": "./bin/mongo-migrate.js"
+        "airspring-migrate": "./bin/airspring-migrate.js"
     },
     "devDependencies": {
         "mongodb": "1.3.19"

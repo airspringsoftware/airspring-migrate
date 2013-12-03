@@ -17,7 +17,7 @@ var options = { args: [] };
  */
 var usage = [
     ''
-    , '  Usage: mongo-migrate [options] [command]'
+    , '  Usage: airspring-migrate [options] [command]'
     , ''
     , '  Options:'
     , ''
