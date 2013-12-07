@@ -1,7 +1,7 @@
 #airspring-migrate
 =============
 
-Built with a starting framework from: https://github.com/visionmedia/node-migrate
+Built with a starting framework from: https://github.com/visionmedia/node-migrate, and https://github.com/afloyd/mongo-migrate.git
 
 
 ## Installation

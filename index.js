@@ -108,6 +108,7 @@ function runMongoMigrate(options, direction, migrationEnd) {
             });
 
         if (!migrateToFound) {
+            if (migrateToNum === lastMigrationNum) return abort('migration `' + migrateTo + '` has already been ran!');
             return abort('migration `'+ migrateTo + '` not found!');
         }
 
