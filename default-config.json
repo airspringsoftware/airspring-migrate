@@ -12,7 +12,7 @@
             , "    next();"
             , "};"
             , ""
-            , "exports.down = function(db, next){"
+            , "exports.down = function(dbContext, next){"
             , "    var db = dbContext.connection,"
             , "        mongodb = dbContext.requirements.mongodb;"
             , ""
