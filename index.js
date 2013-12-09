@@ -98,7 +98,7 @@ function runMongoMigrate(options, direction, migrationEnd) {
                     if (isDirectionUp) {
                         isRunnable = isRunnable && migrateToNum >= migrationNum;
                     } else {
-                        isRunnable = isRunnable && migrateToNum < migrationNum;
+                        isRunnable = isRunnable && migrateToNum <= migrationNum;
                     }
                 }
 
