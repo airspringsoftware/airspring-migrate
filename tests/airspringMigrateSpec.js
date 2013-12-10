@@ -3,14 +3,21 @@ var mongodb = require('mongodb'),
 
 // Specify the default timeout
 jasmine.getEnv().defaultTimeoutInterval = 80000;
+var port = 27017,
+    serverName = 'localhost',
+    dbName = 'db-test',
+    db = null,
+    self = this;
+
 
 /* ---- Begin Tests ---- */
 describe("test core functionality of migration tool",function() {
     it('test MigrationStorageController', function(done) {
-        server = new mongodb.Server('localhost', 27017, {});
+        server = new mongodb.Server(serverName, port, {});
 
-        new mongodb.Db('db-test', server, {safe: true}).open(function (err, db) {
+        new mongodb.Db(dbName, server, {safe: true}).open(function (err, db) {
             expect(err).toBeFalsy();
+            self.db = db;
 
             var removeMigrations = function () {
                 var storage = new MigrationStorageController(db);
@@ -28,7 +35,12 @@ describe("test core functionality of migration tool",function() {
                             removeMigrations();
                         });
                     } else {
-                        process.exit();
+                        storage.getAllMigrationEntries(function (err, migrations) {
+                            expect(err).toBeFalsy();
+                            expect(migrations.length).toBe(0);
+
+                            done();
+                        });
                     }
 
                 });
@@ -49,25 +61,33 @@ describe("test core functionality of migration tool",function() {
 
                     storage.getFirstMigrationEntry(function (err, m) {
                         expect(err).toBeFalsy();
+                        expect(m.length).toBe(1);
 
-                        console.log('First: ' + JSON.stringify(m));
+
+                        console.log('First: ' + m[0].title.split('-')[1]);
+                        expect(m[0].title.split('-')[1]).toBe('test0');
 
                         storage.getLastMigrationEntry(function(err, m) {
                             expect(err).toBeFalsy();
+                            expect(m.length).toBe(1);
 
-                            console.log('last: ' + JSON.stringify(m));
+                            console.log('title: ' + m[0].title + '; ' + cur  + '-' + 'test' + i);
+                            expect(m[0].title).toBe(cur  + '-' + 'test' + i);
 
                             if (i < 4) {
                                 runTests(++i);
                             } else {
-                                removeMigrations();
+                                storage.getAllMigrationEntries(function (err, migrations) {
+                                    expect(err).toBeFalsy();
+                                    expect(migrations.length).toBe(5);
+                                    removeMigrations();
+                                });
                             }
 
                         });
                     });
                 });
             };
-
 
             var storage = new MigrationStorageController(db);
             storage.hasMigrationStorage(function (err, exists) {
@@ -89,5 +109,16 @@ describe("test core functionality of migration tool",function() {
                 });
             });
         });
+    });
+
+    afterEach(function (done) {
+        if (self.db !== null) {
+            var collection = new mongodb.Collection(self.db, 'migrations');
+            collection.drop(function(err, reply){
+                if (err) console.error(err);
+
+                done();
+            });
+        }
     });
 });
