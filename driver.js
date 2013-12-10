@@ -1,7 +1,8 @@
 /*
  * Requirements
  */
-var mongodb = require('mongodb');
+var mongodb = require('mongodb'),
+    MigrationStorageController = require('./MigrationStorageController.js');
 
 /*
  * Object for export
@@ -17,11 +18,11 @@ var Driver =  {
             if (err) {
                 return complete(err);
             }
+            var migrationStorageController = new MigrationStorageController(db);
 
-            var collection = new mongodb.Collection(db, 'migrations');
             complete (null, {
                 connection: db,
-                migrationCollection: collection,
+                migrationStorageController: migrationStorageController,
                 requirements: {
                     'mongodb': mongodb
                 }

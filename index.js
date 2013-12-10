@@ -169,18 +169,15 @@ function runMongoMigrate(options, direction, migrationEnd) {
      */
     function performMigration(direction, migrateTo) {
 
-        driver.getConnection(dbOptions, function (err, db) {
-            /* var migrationCollection = db.migrationCollection,
-                dbConnection = db.connection,
-                requirements = db.requirements;
-            */
-
+        driver.getConnection(dbOptions, function (err, results) {
             if (err) {
                 console.error('Error connecting to database');
                 process.exit(1);
             }
 
-            db.migrationCollection.find({}).sort({num: -1}).limit(1).toArray(function (err, migrationsRun) {
+            var migrationStorage = results.migrationStorageController;
+            //throw 'migrationStorage: ' + migrationStorage.constructor;
+            migrationStorage.getLastMigrationEntry(function (err, migrationsRun) {
                 if (err) {
                     console.error('Error querying migration collection', err);
                     process.exit(1);
@@ -191,7 +188,7 @@ function runMongoMigrate(options, direction, migrationEnd) {
 
                 migrate({
                     migrationTitle: 'migrations/.migrate',
-                    db: db
+                    db: results // Name this better
                 });
                 migrations(direction, lastMigrationNum, migrateTo).forEach(function(path){
                     var mod = require(cwd + '/' + path); // Import the migration file
