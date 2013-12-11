@@ -9,9 +9,7 @@ var migrate = require('./lib/migrate'),
 var previousWorkingDirectory = process.cwd(),
     cwd = process.cwd();
 
-var configFileName = 'default-config.js',
-    dbProperty = 'connectionOptions',
-    defaultDriverFileName = 'driver.js';
+var defaultDriverFileName = 'driver.js';
 
 /**
  * Default migration template.
@@ -33,12 +31,14 @@ function slugify(str) {
 }
 
 function runMongoMigrate(options, direction, migrationEnd) {
-    var config = new (require(cwd + path.sep + configFileName))(), // Convert the database config file to an object
-        dbOptions = config[dbProperty], // Get the database config options
+    var config = options.config, // Convert the database config file to an object
+        dbOptions = config[options.dbProperty], // Get the database config options
         driver = config.driver,
         template = typeof config.template === 'undefined' ? defaultTemplate : config.template; // Get the database driver
 
     if (typeof options === 'undefined') options = { args: [] };
+
+    if (typeof options.cwd !== 'undefined') chdir(options.cwd);
 
     if (typeof direction !== 'undefined') {
         options.command = direction;
@@ -236,20 +236,8 @@ function chdir(dir) {
     process.chdir(cwd = dir);
 }
 
-function setConfigFilename(filename) {
-    configFileName = filename;
-}
-
-function setConfigFileProperty(propertyName) {
-    dbProperty = propertyName;
-}
-
 module.exports = {
     run: runMongoMigrate,
-    changeWorkingDirectory: chdir,
-    setConfigFilename: setConfigFilename,
-    setConfigFileProp: setConfigFileProperty,
-    join: join,
     Driver: require(__dirname + '/driver.js'),
     MigrationStorageController: require(__dirname + '/MigrationStorageController.js')
 };

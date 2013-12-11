@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-
-var migrate = require('../');
+var migrate = require('../'),
+    path = require('path');
 
 /**
  * Arguments.
@@ -10,7 +10,22 @@ var args = process.argv.slice(2);
 /**
  * Option defaults.
  */
-var options = { args: [] };
+var options = { args: [] },
+    configFileName = 'default-config.js',
+    dbProperty = 'connectionOptions',
+    cwd = process.cwd();
+
+function setConfigFilename(filename) {
+    configFileName = filename;
+}
+
+function setConfigFileProperty(propertyName) {
+    dbProperty = propertyName;
+}
+
+function setWorkingDirectory(dir) {
+    options.cwd = dir;
+}
 
 /**
  * Usage information.
@@ -69,15 +84,15 @@ while (args.length) {
             break;
         case '-c':
         case '--chdir':
-            migrate.changeWorkingDirectory(required());
+            setWorkingDirectory(required());
             break;
         case '-cfg':
         case '--config':
-            migrate.setConfigFilename(required());
+            setConfigFilename(required());
             break;
         case '-dbn':
         case '--dbPropName':
-            migrate.setConfigFileProp(required());
+            setConfigFileProperty(required());
             break;
         default:
             if (options.command) {
@@ -87,5 +102,8 @@ while (args.length) {
             }
     }
 }
+
+options.config = new (require(options.cwd + path.sep + configFileName))();
+options.dbProperty = dbProperty;
 
 migrate.run(options);
