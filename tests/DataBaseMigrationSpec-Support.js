@@ -101,7 +101,6 @@ module.exports = function (dbPath) {
 
     /* options { migrationName, callback, [migrationScript] } */
     var runCreate = function(options) {
-        console.log('runCreate: ' + 'airspring-migrate create ' + options.migrationName);
         exec('airspring-migrate create --config ../default-config.js ' + options.migrationName, function (error, stdout, stderr) {
             expect(error).toBeFalsy();
 
@@ -111,9 +110,7 @@ module.exports = function (dbPath) {
             var testFile = getFiles('./migrations', '^(\\d{13}[-])' + options.migrationName + '.js')[0],
                 path = './migrations/' + testFile;
 
-            console.log('path: ' + path);
             fs.readFile(path, 'utf8', function(err, data) {
-                console.log('read file: ' + err);
                 expect(err).toBeFalsy();
 
                 // Check that the file created matches the template

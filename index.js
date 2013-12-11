@@ -249,5 +249,7 @@ module.exports = {
     changeWorkingDirectory: chdir,
     setConfigFilename: setConfigFilename,
     setConfigFileProp: setConfigFileProperty,
-    join: join
+    join: join,
+    Driver: require(__dirname + '/driver.js'),
+    MigrationStorageController: require(__dirname + '/MigrationStorageController.js')
 };
