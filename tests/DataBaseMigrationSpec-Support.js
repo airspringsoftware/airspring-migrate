@@ -77,7 +77,7 @@ module.exports = function (dbPath) {
                         } else {
                             done();
                         }
-                    }
+                    };
 
                     dropCollections(0);
                 } else {
@@ -97,7 +97,7 @@ module.exports = function (dbPath) {
             expect(err).toBeFalsy();
             callback();
         });
-    }
+    };
 
     /* options { migrationName, callback, [migrationScript] } */
     var runCreate = function(options) {

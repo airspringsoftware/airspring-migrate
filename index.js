@@ -1,7 +1,8 @@
 var migrate = require('./lib/migrate'),
     path = require('path'),
     join = path.join,
-    fs = require('fs');
+    fs = require('fs'),
+    _ = require('Underscore');
 
 /**
  * Current working directory.
@@ -40,6 +41,8 @@ function runAirSpringMigrate(options, direction, migrationEnd) {
 
     if (typeof options.cwd !== 'undefined') chdir(options.cwd);
 
+    if (_.isFunction(options.log)) log = options.log; // override the log function
+
     if (typeof direction !== 'undefined') {
         options.command = direction;
     }
@@ -67,7 +70,7 @@ function runAirSpringMigrate(options, direction, migrationEnd) {
                     isRunnable = formatCorrect && isDirectionUp ? migrationNum > lastMigrationNum : migrationNum <= lastMigrationNum;
 
                 if (!formatCorrect) {
-                    console.log('"' + file + '" ignored. Does not match migration naming schema');
+                    log('', '"' + file + '" ignored. Does not match migration naming schema');
                 }
 
                 return formatCorrect && isRunnable;
@@ -169,16 +172,16 @@ function runAirSpringMigrate(options, direction, migrationEnd) {
 
         driver.getConnection(dbOptions, function (err, results) {
             if (err) {
-                console.error('Error connecting to database');
-                process.exit(1);
+                //console.error('Error connecting to database');
+                return abort(err, options.complete);
             }
 
             var migrationStorage = results.migrationStorageController;
             //throw 'migrationStorage: ' + migrationStorage.constructor;
             migrationStorage.getLastMigrationEntry(function (err, migrationsRun) {
                 if (err) {
-                    console.error('Error querying migration collection', err);
-                    process.exit(1);
+                    // console.error('Error querying migration collection', err);
+                    return abort(err, options.complete);
                 }
 
                 var lastMigration = migrationsRun[0],
@@ -188,19 +191,28 @@ function runAirSpringMigrate(options, direction, migrationEnd) {
                     migrationTitle: 'migrations/.migrate',
                     db: results // Name this better
                 });
+
                 migrations(direction, lastMigrationNum, migrateTo).forEach(function(path){
                     var mod = require(cwd + '/' + path); // Import the migration file
                     migrate({
                         num: parseInt(path.split('/')[1].match(/^(\d+)/)[0], 10),
                         title: path,
                         up: mod.up,
-                        down: mod.down});
+                        down: mod.down
+                    });
                 });
 
                 //Revert working directory to previous state
                 process.chdir(previousWorkingDirectory);
 
-                var set = migrate();
+                var complete = function(err) {
+                    if (err) {
+                        log('Error', err, true);
+                        throw new Error(err);
+                    }
+                };
+                if (_.isFunction(options.complete)) complete = options.complete;
+                var set = migrate({ complete: complete });
 
                 set.on('migration', function(migration, direction){
                     log(direction, migration.title);
@@ -208,7 +220,7 @@ function runAirSpringMigrate(options, direction, migrationEnd) {
 
                 set.on('save', function(){
                     log('migration', 'complete');
-                    process.exit();
+                    if (_.isFunction(options.complete)) options.complete();
                 });
 
                 set[direction](null, lastMigrationNum);
@@ -227,9 +239,10 @@ function runAirSpringMigrate(options, direction, migrationEnd) {
  * abort with a message
  * @param msg
  */
-function abort(msg) {
-    console.error('  %s', msg);
-    process.exit(1);
+function abort(msg, complete) {
+    if (_.isFunction(complete)) complete(msg);
+    //console.error('  %s', msg);
+    //process.exit(1);
 }
 
 function chdir(dir) {

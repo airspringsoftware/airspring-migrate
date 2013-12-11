@@ -40,8 +40,10 @@ MigrationStorageController.prototype = {
             executed: new Date()
         }, function (err, objects) {
             if (err) {
-                console.error('Error saving migration run: ', migration.title, '\nerr: ', err);
-                process.exit(1);
+                complete(err, objects);
+                //throw new Error('Error saving migration run: ' + migration.title + '\nerr: ' + err));
+                //console.error('Error saving migration run: ', migration.title, '\nerr: ', err);
+                //process.exit(1);
             }
 
             complete(err, objects);
@@ -50,8 +52,9 @@ MigrationStorageController.prototype = {
     removeMigrationEntry: function (migration, complete) {
         this.storage.findAndModify({ num: migration.num }, [], {}, { remove: true }, function (err, doc) {
             if (err) {
-                console.error('Error removing migration from DB: ', migration.title, '\nerr: ', err);
-                process.exit(1);
+                complete(err, doc);
+                //console.error('Error removing migration from DB: ', migration.title, '\nerr: ', err);
+                //process.exit(1);
             }
 
             complete(err, doc);

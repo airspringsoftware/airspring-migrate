@@ -10,7 +10,7 @@ var self = null;
 module.exports = Driver;
 function Driver (options) {
     if (typeof options !== undefined) {
-        _.extend(Driver.prototype, options)
+        _.extend(Driver.prototype, options);
     }
 
     self = this;

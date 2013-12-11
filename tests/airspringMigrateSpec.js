@@ -5,9 +5,13 @@ var port = 27017,
     self = this;
 
 var mongodb = require('mongodb'),
-    MigrationStorageController = require('../MigrationStorageController.js'),
+    Migrations = require('../'),
+    MigrationStorageController = Migrations.MigrationStorageController,
+    Driver = Migrations.Driver,
+    Configuration = Migrations.Configuration,
     dbPath = 'mongodb://' + serverName + ':' + port + '/' + dbName,
-    support = require('./DataBaseMigrationSpec-Support.js')(dbPath);
+    support = require('./DataBaseMigrationSpec-Support.js')(dbPath)
+    exec = require('child_process').exec;
 
 // Specify the default timeout
 jasmine.getEnv().defaultTimeoutInterval = 80000;
@@ -114,8 +118,42 @@ describe("test core functionality of migration tool",function() {
         });
     });
 
-    it('test migrations through the command line', function(done) {
-        support.runCreate({ 'migrationName': 'test1', 'callback': done });
+    it('using the command line', function (done) {
+        support.runCreate({ migrationName: 'test1', callback: function() {
+            exec("airspring-migrate --config ../default-config.js up", function (error, stdout, stderr) {
+                expect(error).toBeFalsy();
+
+                exec("airspring-migrate --config ../default-config.js down", function (error, stdout, stderr) {
+                    expect(error).toBeFalsy();
+
+                    done();
+                });
+            });
+        }});
+    });
+
+    it('using programmatic migrations and extension of driver and config files', function (done) {
+        var config = new Configuration({
+            connectionOptions: {
+                host : "localhost",
+                port: 27017,
+                db   : "app-db2"
+            }
+        });
+
+        var options = {
+                config: config,
+                dbProperty: 'connectionOptions',
+                args: [],
+                complete: function (err) {
+                    expect(err).toBeFalsy();
+                    done();
+                }
+            };
+
+        support.runCreate({ migrationName: 'test1', callback: function () {
+            Migrations.run(options);
+        }});
     });
 
     afterEach(function (done) {
