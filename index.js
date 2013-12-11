@@ -10,7 +10,7 @@ var migrate = require('./lib/migrate'),
 var previousWorkingDirectory = process.cwd(),
     cwd = process.cwd();
 
-var configFileName = 'default-config.json',
+var configFileName = 'default-config.js',
     dbProperty = 'connectionOptions',
     defaultDriverFileName = 'driver.js';
 

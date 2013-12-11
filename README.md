@@ -118,7 +118,7 @@ The options for connecting to the database are read in from a file. You can conf
 This would set the working directory two levels above the airspring-migrate directory, such as if you included it into another project and it was nested in the node_modules folder.
 
 ### Config filename
-The default configuration filename is `default-config.json`. If you wish to use a different filename, use the `-cfg <filename>` option:
+The default configuration filename is `default-config.js`. If you wish to use a different filename, use the `-cfg <filename>` option:
 ```
 	$ airspring-migrate -cfg my-config.json up
 	migration : complete
