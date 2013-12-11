@@ -239,5 +239,6 @@ function chdir(dir) {
 module.exports = {
     run: runAirSpringMigrate,
     Driver: require(__dirname + '/driver.js'),
-    MigrationStorageController: require(__dirname + '/MigrationStorageController.js')
+    MigrationStorageController: require(__dirname + '/MigrationStorageController.js'),
+    Configuration: require(__dirname + '/default-config.js')
 };
