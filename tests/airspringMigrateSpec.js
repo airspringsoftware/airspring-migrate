@@ -144,15 +144,14 @@ describe("test core functionality of migration tool",function() {
         var options = {
                 config: config,
                 dbProperty: 'connectionOptions',
-                args: [],
-                complete: function (err) {
-                    expect(err).toBeFalsy();
-                    done();
-                }
+                args: []
             };
 
         support.runCreate({ migrationName: 'test1', callback: function () {
-            Migrations.run(options);
+            Migrations.run(options, function (err) {
+                expect(err).toBeFalsy();
+                done();
+            });
         }});
     });
 

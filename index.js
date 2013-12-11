@@ -31,7 +31,7 @@ function slugify(str) {
     return str.replace(/\s+/g, '-');
 }
 
-function runAirSpringMigrate(options, direction, migrationEnd) {
+function runAirSpringMigrate(options, complete) {
     var config = options.config, // Convert the database config file to an object
         dbOptions = config[options.dbProperty], // Get the database config options
         driver = config.driver,
@@ -42,14 +42,6 @@ function runAirSpringMigrate(options, direction, migrationEnd) {
     if (typeof options.cwd !== 'undefined') chdir(options.cwd);
 
     if (_.isFunction(options.log)) log = options.log; // override the log function
-
-    if (typeof direction !== 'undefined') {
-        options.command = direction;
-    }
-
-    if (typeof migrationEnd !== 'undefined') {
-        options.args.push(migrationEnd);
-    }
 
     /**
      * Load migrations.
@@ -70,7 +62,7 @@ function runAirSpringMigrate(options, direction, migrationEnd) {
                     isRunnable = formatCorrect && isDirectionUp ? migrationNum > lastMigrationNum : migrationNum <= lastMigrationNum;
 
                 if (!formatCorrect) {
-                    log('', '"' + file + '" ignored. Does not match migration naming schema');
+                    log('info', '"' + file + '" ignored. Does not match migration naming schema');
                 }
 
                 return formatCorrect && isRunnable;
@@ -173,7 +165,7 @@ function runAirSpringMigrate(options, direction, migrationEnd) {
         driver.getConnection(dbOptions, function (err, results) {
             if (err) {
                 //console.error('Error connecting to database');
-                return abort(err, options.complete);
+                return abort(err, complete);
             }
 
             var migrationStorage = results.migrationStorageController;
@@ -181,7 +173,7 @@ function runAirSpringMigrate(options, direction, migrationEnd) {
             migrationStorage.getLastMigrationEntry(function (err, migrationsRun) {
                 if (err) {
                     // console.error('Error querying migration collection', err);
-                    return abort(err, options.complete);
+                    return abort(err, complete);
                 }
 
                 var lastMigration = migrationsRun[0],
@@ -205,13 +197,14 @@ function runAirSpringMigrate(options, direction, migrationEnd) {
                 //Revert working directory to previous state
                 process.chdir(previousWorkingDirectory);
 
-                var complete = function(err) {
-                    if (err) {
-                        log('Error', err, true);
-                        throw new Error(err);
-                    }
-                };
-                if (_.isFunction(options.complete)) complete = options.complete;
+                if (!_.isFunction(complete)) {
+                    complete = function(err) {
+                        if (err) {
+                            log('Error', err, true);
+                            throw new Error(err);
+                        }
+                    };
+                }
                 var set = migrate({ complete: complete });
 
                 set.on('migration', function(migration, direction){
@@ -220,7 +213,7 @@ function runAirSpringMigrate(options, direction, migrationEnd) {
 
                 set.on('save', function(){
                     log('migration', 'complete');
-                    if (_.isFunction(options.complete)) options.complete();
+                    if (_.isFunction(complete)) complete();
                 });
 
                 set[direction](null, lastMigrationNum);

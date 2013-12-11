@@ -143,13 +143,11 @@ options.config = new (require((options.cwd || process.cwd()) + path.sep + config
 options.dbProperty = dbProperty;
 options.log = log;
 
-options.complete = function (err) {
+migrate.run(options, function (err) {
     if (err) {
         log('Error', err, true);
         process.exit(1);
     }
 
     process.exit();
-};
-
-migrate.run(options);
+});
