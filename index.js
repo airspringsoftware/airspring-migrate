@@ -34,11 +34,10 @@ function slugify(str) {
 }
 
 function runMongoMigrate(options, direction, migrationEnd) {
-    var config = require(cwd + path.sep + configFileName), // Convert the database config file to an object
+    var config = new (require(cwd + path.sep + configFileName))(), // Convert the database config file to an object
         dbOptions = config[dbProperty], // Get the database config options
-        dbDriverName = dbOptions.driver ||  defaultDriverFileNamee, // Get the database drivers file name
-        driver = require(cwd + path.sep + dbDriverName),
-        template = typeof dbOptions.template === 'undefined' ? defaultTemplate : dbOptions.template.join('\n'); // Get the database driver
+        driver = config.driver,
+        template = typeof config.template === 'undefined' ? defaultTemplate : config.template; // Get the database driver
 
     if (typeof options === 'undefined') options = { args: [] };
 
