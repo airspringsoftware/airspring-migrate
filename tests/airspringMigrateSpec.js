@@ -1,13 +1,16 @@
-var mongodb = require('mongodb'),
-    MigrationStorageController = require('../MigrationStorageController.js');
-
-// Specify the default timeout
-jasmine.getEnv().defaultTimeoutInterval = 80000;
 var port = 27017,
     serverName = 'localhost',
     dbName = 'db-test',
     db = null,
     self = this;
+
+var mongodb = require('mongodb'),
+    MigrationStorageController = require('../MigrationStorageController.js'),
+    dbPath = 'mongodb://' + serverName + ':' + port + '/' + dbName,
+    support = require('./DataBaseMigrationSpec-Support.js')(dbPath);
+
+// Specify the default timeout
+jasmine.getEnv().defaultTimeoutInterval = 80000;
 
 
 /* ---- Begin Tests ---- */
@@ -111,10 +114,13 @@ describe("test core functionality of migration tool",function() {
         });
     });
 
+    it('test migrations through the command line', function(done) {
+        support.runCreate({ 'migrationName': 'test1', 'callback': done });
+    });
+
     afterEach(function (done) {
         if (self.db !== null) {
-            var collection = new mongodb.Collection(self.db, 'migrations');
-            collection.drop(function(err, reply){
+            support.afterEach(['migrations'], function(err, reply){
                 if (err) console.error(err);
 
                 done();

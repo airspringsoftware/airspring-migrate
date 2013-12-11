@@ -5,7 +5,9 @@
 /* Requirements */
 var fs = require('fs'),
     mongodb = require('mongodb'),
-    _ = require('underscore');
+    _ = require('underscore'),
+    exec = require('child_process').exec;
+
 /* Extend Db to give it an exists function so we can determine if a collection exists */
 _.extend(mongodb.Db.prototype, {
     'exists': function (collectionName, callback) {
@@ -47,7 +49,7 @@ module.exports = function (dbPath) {
         });
     };
 
-    var resetDataBase = function (done) {
+    var resetDataBase = function (collectionsToRemove, done) {
         // Reset test database
         mongodb.MongoClient.connect(dbPath, function(err, db) {
             if(err) {
@@ -66,20 +68,21 @@ module.exports = function (dbPath) {
                     });
                 };
 
-                // Drop the collections created from the test if they exist
-                dropIfExists('migrations', function() {
-                    dropIfExists('airspring.applications', function() {
-                        dropIfExists('DataDictionary', function() {
-                            dropIfExists('airspring.LogicDictionary', function() {
-                                dropIfExists('airspring.referenceTrees', function() {
-									dropIfExists('airspring.DataDictionary', function() {
-										done()
-									});
-                                });
+                if (collectionsToRemove && collectionsToRemove.length > 0) {
+                    var dropCollections = function(i) {
+                        if (i < collectionsToRemove.length) {
+                            dropIfExists(collectionsToRemove[i], function() {
+                                dropCollections(++i);
                             });
-                        });
-                    });
-                });
+                        } else {
+                            done();
+                        }
+                    }
+
+                    dropCollections(0);
+                } else {
+                    done();
+                }
             }
         });
     };
@@ -88,14 +91,52 @@ module.exports = function (dbPath) {
 		return fs.readFileSync('./spec-migration-scripts/' + templateName + '.js', 'utf8');
 	};
 
+    var writeMigrationFile = function (migrationName, migrationScript, callback) {
+        var testFile = support.getFiles('./migrations', '^(\\d{13}[-])' + migrationName + '.js')[0];
+        fs.writeFile('./migrations/' + testFile, migrationScript, function(err){
+            expect(err).toBeFalsy();
+            callback();
+        });
+    }
+
+    /* options { migrationName, callback, [migrationScript] } */
+    var runCreate = function(options) {
+        console.log('runCreate: ' + 'airspring-migrate create ' + options.migrationName);
+        exec('airspring-migrate create --config ../default-config.js ' + options.migrationName, function (error, stdout, stderr) {
+            expect(error).toBeFalsy();
+
+            // Check that the create command produced a file
+            expect(fileExists('./migrations', '^(\\d{13}[-])' + options.migrationName + '.js')).toBe(true);
+
+            var testFile = getFiles('./migrations', '^(\\d{13}[-])' + options.migrationName + '.js')[0],
+                path = './migrations/' + testFile;
+
+            console.log('path: ' + path);
+            fs.readFile(path, 'utf8', function(err, data) {
+                console.log('read file: ' + err);
+                expect(err).toBeFalsy();
+
+                // Check that the file created matches the template
+                expect(data).toBe(fetchTemplate('template'));
+
+                if (typeof options.migrationScript	=== 'undefined') {
+                    options.callback();
+                } else {
+                    writeMigrationFile(options.migrationName, options.migrationScript, options.callback);
+                }
+            });
+        });
+    };
+
     var obj = {
-        'afterEach': function (done) {
+        afterEach: function (collectionsToRemove, done) {
             resetFileSystem();
-            resetDataBase(done);
+            resetDataBase(collectionsToRemove, done);
         },
-        'fileExists': fileExists,
-        'getFiles': getFiles,
-		'fetchTemplate': fetchTemplate
+        fileExists: fileExists,
+        getFiles: getFiles,
+		fetchTemplate: fetchTemplate,
+        runCreate: runCreate
     };
 
     return obj;
