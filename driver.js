@@ -6,18 +6,21 @@ var mongodb = require('mongodb'),
 
 
 /* Exports */
+var self = null;
 module.exports = Driver;
 function Driver (options) {
     if (typeof options !== undefined) {
         _.extend(Driver.prototype, options)
     }
+
+    self = this;
 }
+
 
 Driver.prototype =  {
     constructor: Driver,
     MigrationStorageController: require('./MigrationStorageController.js'),
     getConnection: function (opts, complete) {
-        console.log('here 2');
         opts = getDbOpts(opts);
 
         var server = new mongodb.Server(opts.host, opts.port, {});
@@ -26,7 +29,7 @@ Driver.prototype =  {
             if (err) {
                 return complete(err);
             }
-            var migrationStorageController = new MigrationStorageController(db);
+            var migrationStorageController = new self.MigrationStorageController(db);
 
             complete (null, {
                 migrationStorageController: migrationStorageController,
