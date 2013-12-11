@@ -1,5 +1,4 @@
 var migrate = require('./lib/migrate'),
-    npm = require('npm'),
     path = require('path'),
     join = path.join,
     fs = require('fs');
