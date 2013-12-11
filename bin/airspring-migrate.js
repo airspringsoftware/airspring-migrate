@@ -103,7 +103,7 @@ while (args.length) {
     }
 }
 
-options.config = new (require(options.cwd + path.sep + configFileName))();
+options.config = new (require((options.cwd || process.cwd()) + path.sep + configFileName))();
 options.dbProperty = dbProperty;
 
 migrate.run(options);
