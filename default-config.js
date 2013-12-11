@@ -21,7 +21,7 @@ Configuration.prototype = {
     template: [
         "exports.up = function(dbContext, next){"
         , "    var db = dbContext.resources.db,"
-        , "        mongodb = dbContext.resource.mongodb;"
+        , "        mongodb = dbContext.resources.mongodb;"
         , ""
         , "    next();"
         , "};"
