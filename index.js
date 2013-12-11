@@ -30,7 +30,7 @@ function slugify(str) {
     return str.replace(/\s+/g, '-');
 }
 
-function runMongoMigrate(options, direction, migrationEnd) {
+function runAirSpringMigrate(options, direction, migrationEnd) {
     var config = options.config, // Convert the database config file to an object
         dbOptions = config[options.dbProperty], // Get the database config options
         driver = config.driver,
@@ -237,7 +237,7 @@ function chdir(dir) {
 }
 
 module.exports = {
-    run: runMongoMigrate,
+    run: runAirSpringMigrate,
     Driver: require(__dirname + '/driver.js'),
     MigrationStorageController: require(__dirname + '/MigrationStorageController.js')
 };
