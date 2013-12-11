@@ -103,9 +103,6 @@ function abort(msg) {
     process.exit(1);
 }
 
-var runMongoMigrateIdx = args.indexOf('--runMongoMigrate');
-if (runMongoMigrateIdx > -1) args.splice(runMongoMigrateIdx, 1);
-
 // parse arguments
 var arg;
 while (args.length) {
