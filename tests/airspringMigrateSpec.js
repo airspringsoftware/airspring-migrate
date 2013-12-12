@@ -10,7 +10,7 @@ var mongodb = require('mongodb'),
     Driver = Migrations.Driver,
     Configuration = Migrations.Configuration,
     dbPath = 'mongodb://' + serverName + ':' + port + '/' + dbName,
-    support = require('./DataBaseMigrationSpec-Support.js')(dbPath)
+    support = require('./DataBaseMigrationSpec-Support.js')(dbPath),
     exec = require('child_process').exec;
 
 // Specify the default timeout
@@ -141,18 +141,46 @@ describe("test core functionality of migration tool",function() {
             }
         });
 
-        var options = {
+
+        var runCreateModule = function (i) {
+            var options = {
                 config: config,
                 dbProperty: 'connectionOptions',
-                args: []
+                command: 'create',
+                args: ['test' + i]
             };
 
-        support.runCreate({ migrationName: 'test1', callback: function () {
-            Migrations.run(options, function (err) {
-                expect(err).toBeFalsy();
-                done();
-            });
-        }});
+            if (i < 4) {
+                Migrations.run(options, function (err) {
+                    expect(err).toBeFalsy();
+                    expect(support.fileExists('./migrations', '^(\\d{13}[-])test'  + i +  '.js')).toBe(true);
+
+                    runCreateModule(++i);
+                });
+            } else {
+                options = {
+                    config: config,
+                    dbProperty: 'connectionOptions',
+                    args: []
+                };
+
+                Migrations.run(options, function (err) {
+                    expect(err).toBeFalsy();
+
+                    options = {
+                        config: config,
+                        dbProperty: 'connectionOptions',
+                        command: 'down',
+                        args: []
+                    };
+                    Migrations.run(options, function (err) {
+                        expect(err).toBeFalsy();
+                        done();
+                    });
+                })
+            }
+        }
+        runCreateModule(0);
     });
 
     afterEach(function (done) {

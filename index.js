@@ -35,7 +35,8 @@ function runAirSpringMigrate(options, complete) {
     var config = options.config, // Convert the database config file to an object
         dbOptions = config[options.dbProperty], // Get the database config options
         driver = config.driver,
-        template = typeof config.template === 'undefined' ? defaultTemplate : config.template; // Get the database driver
+        template = typeof config.template === 'undefined' ? defaultTemplate : config.template,
+        callBackRan = false; // Get the database driver
 
     if (typeof options === 'undefined') options = { args: [] };
 
@@ -153,6 +154,7 @@ function runAirSpringMigrate(options, complete) {
         var fullPath = 'migrations' + path.sep + name + '.js';
         log('create', join(cwd, fullPath));
         fs.writeFileSync(fullPath, template);
+        if (_.isFunction(complete)) complete();
     }
 
     /**
