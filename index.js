@@ -171,14 +171,13 @@ function runAirSpringMigrate(options, complete) {
             }
 
             var migrationStorage = results.migrationStorageController;
-            //throw 'migrationStorage: ' + migrationStorage.constructor;
             migrationStorage.getLastMigrationEntry(function (err, migrationsRun) {
                 if (err) {
                     // console.error('Error querying migration collection', err);
                     return abort(err, complete);
                 }
 
-                var lastMigration = migrationsRun[0],
+                var lastMigration = migrationsRun,
                     lastMigrationNum = lastMigration ? lastMigration.num : 0;
 
                 migrate({

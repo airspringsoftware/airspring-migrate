@@ -28,10 +28,26 @@ MigrationStorageController.prototype = {
         this.storage.find({}).sort({num: -1}).toArray(complete);
     },
     getFirstMigrationEntry: function (complete) {
-        this.storage.find({}).sort({num: 1}).limit(1).toArray(complete);
+        this.storage.find({}).sort({num: 1}).limit(1).toArray(function(err, collection) {
+            if (err)  return complete(err, null);
+
+            if (collection.length > 0) {
+                complete(err, collection[0])
+            } else {
+                complete(err, null);
+            }
+        });
     },
     getLastMigrationEntry: function (complete) {
-        this.storage.find({}).sort({num: -1}).limit(1).toArray(complete);
+        this.storage.find({}).sort({num: -1}).limit(1).toArray(function(err, collection) {
+            if (err)  return complete(err, null);
+
+            if (collection.length > 0) {
+                complete(err, collection[0])
+            } else {
+                complete(err, null);
+            }
+        });
     },
     addMigrationEntry: function (migration, complete) {
         var self = this;

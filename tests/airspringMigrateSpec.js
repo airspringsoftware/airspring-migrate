@@ -32,8 +32,8 @@ describe("test core functionality of migration tool",function() {
                 storage.getFirstMigrationEntry(function(err, object) {
                     expect(err).toBeFalsy();
 
-                    if (object.length > 0) {
-                        var m = object[0];
+                    if (object !== null) {
+                        var m = object;
                         console.log('removing: ' + JSON.stringify(object));
 
                         storage.removeMigrationEntry(m, function(err, object){
@@ -68,18 +68,18 @@ describe("test core functionality of migration tool",function() {
 
                     storage.getFirstMigrationEntry(function (err, m) {
                         expect(err).toBeFalsy();
-                        expect(m.length).toBe(1);
+                        expect(m).toBeTruthy();
 
 
-                        console.log('First: ' + m[0].title.split('-')[1]);
-                        expect(m[0].title.split('-')[1]).toBe('test0');
+                        console.log('First: ' + m.title.split('-')[1]);
+                        expect(m.title.split('-')[1]).toBe('test0');
 
                         storage.getLastMigrationEntry(function(err, m) {
                             expect(err).toBeFalsy();
-                            expect(m.length).toBe(1);
+                            expect(m).toBeTruthy();
 
-                            console.log('title: ' + m[0].title + '; ' + cur  + '-' + 'test' + i);
-                            expect(m[0].title).toBe(cur  + '-' + 'test' + i);
+                            console.log('title: ' + m.title + '; ' + cur  + '-' + 'test' + i);
+                            expect(m.title).toBe(cur  + '-' + 'test' + i);
 
                             if (i < 4) {
                                 runTests(++i);
