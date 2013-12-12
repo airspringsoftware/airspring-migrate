@@ -1,10 +1,11 @@
 var mongodb = require('mongodb');
 module.exports = MigrationStorageController;
 
-function MigrationStorageController (db) {
+function MigrationStorageController (db, options) {
     this.storageName = 'migrations';
     this.storage = new mongodb.Collection(db, this.storageName);
     this.db = db;
+    this.options = options;
 }
 
 MigrationStorageController.prototype = {
