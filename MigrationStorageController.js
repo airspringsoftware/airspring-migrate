@@ -5,7 +5,7 @@ function MigrationStorageController (db, options) {
     this.storageName = 'migrations';
     this.storage = new mongodb.Collection(db, this.storageName);
     this.db = db;
-    this.options = options;
+    this.options = options || {};
 }
 
 MigrationStorageController.prototype = {
