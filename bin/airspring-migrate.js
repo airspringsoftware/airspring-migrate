@@ -12,7 +12,6 @@ var args = process.argv.slice(2);
  */
 var options = { args: [] },
     configFileName = 'default-config.js',
-    dbProperty = 'connectionOptions',
     cwd = process.cwd(),
     silent = false;
 
@@ -27,7 +26,6 @@ var usage = [
     , ''
     , '     -c, --chdir <path>    	    change the working directory'
     , '     -cfg, --config <path>       DB config file name'
-    , '     -dbn, --dbPropName <string> Property name for database connection in config file'
     , ''
     , '  Commands:'
     , ''
@@ -55,13 +53,6 @@ function setConfigFilename(filename) {
     configFileName = filename;
 }
 
-/**
- * change the property which is used in the config object to store connection information about the database
- * @param propertyName
- */
-function setConfigFileProperty(propertyName) {
-    dbProperty = propertyName;
-}
 
 /**
  * Change the current working directory under which the script is executed
@@ -122,10 +113,6 @@ while (args.length) {
         case '--config':
             setConfigFilename(required());
             break;
-        case '-dbn':
-        case '--dbPropName':
-            setConfigFileProperty(required());
-            break;
         case '-s':
         case '--silent':
             setSilent(true);
@@ -140,7 +127,7 @@ while (args.length) {
 }
 
 options.config = new (require((options.cwd || process.cwd()) + path.sep + configFileName))();
-options.dbProperty = dbProperty;
+options.config = new (require((options.cwd || process.cwd()) + path.sep + configFileName))();
 options.log = log;
 
 migrate.run(options, function (err) {

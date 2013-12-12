@@ -145,7 +145,6 @@ describe("test core functionality of migration tool",function() {
         var runCreateModule = function (i) {
             var options = {
                 config: config,
-                dbProperty: 'connectionOptions',
                 command: 'create',
                 args: ['test' + i]
             };
@@ -160,7 +159,6 @@ describe("test core functionality of migration tool",function() {
             } else {
                 options = {
                     config: config,
-                    dbProperty: 'connectionOptions',
                     args: []
                 };
 
@@ -169,7 +167,7 @@ describe("test core functionality of migration tool",function() {
 
                     options = {
                         config: config,
-                        dbProperty: 'connectionOptions',
+                        config: config,
                         command: 'down',
                         args: []
                     };

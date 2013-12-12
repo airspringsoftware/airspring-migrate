@@ -33,7 +33,8 @@ function slugify(str) {
 
 function runAirSpringMigrate(options, complete) {
     var config = options.config, // Convert the database config file to an object
-        dbOptions = config[options.dbProperty], // Get the database config options
+        dbOptions = config.connectionOptions, // Get the database config options
+        dbOptions = config.connectionOptions, // Get the database config options
         driver = config.driver,
         template = typeof config.template === 'undefined' ? defaultTemplate : config.template,
         callBackRan = false; // Get the database driver
