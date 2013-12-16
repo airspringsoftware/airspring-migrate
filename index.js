@@ -180,6 +180,7 @@ function runAirSpringMigrate(options, complete) {
                 var lastMigration = migrationsRun,
                     lastMigrationNum = lastMigration ? lastMigration.num : 0;
 
+                console.log('resulsts inside: ' + results.resources.airspring);
                 migrate({
                     migrationTitle: 'migrations/.migrate',
                     db: results // Name this better
@@ -224,7 +225,7 @@ function runAirSpringMigrate(options, complete) {
 
     // invoke command
     var command = options.command || 'up';
-    if (!(command in commands)) abort('unknown command "' + command + '"');
+    if (!(command in commands)) return abort('unknown command "' + command + '"');
     command = commands[command];
     command.apply(this, options.args);
 }
