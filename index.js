@@ -180,10 +180,10 @@ function runAirSpringMigrate(options, complete) {
                 var lastMigration = migrationsRun,
                     lastMigrationNum = lastMigration ? lastMigration.num : 0;
 
-                console.log('results inside: ' + results.resources);
                 migrate({
                     migrationTitle: 'migrations/.migrate',
-                    migrationScriptResources: results // Name this better
+                    migrationScriptResources: results.resources, // Name this better
+                    migrationStorageController: results.migrationStorageController
                 });
 
                 migrations(direction, lastMigrationNum, migrateTo).forEach(function(path){

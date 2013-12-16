@@ -19,16 +19,16 @@ Configuration.prototype = {
     },
     driver: new (require(__dirname + "/driver.js"))(),
     template: [
-        "exports.up = function(dbContext, next){"
-        , "    var db = dbContext.resources.db,"
-        , "        mongodb = dbContext.resources.mongodb;"
+        "exports.up = function(resources, next){"
+        , "    var db = resources.db,"
+        , "        mongodb = resources.mongodb;"
         , ""
         , "    next();"
         , "};"
         , ""
-        , "exports.down = function(dbContext, next){"
-        , "    var db = dbContext.resources.db,"
-        , "        mongodb = dbContext.resources.mongodb;"
+        , "exports.down = function(resources, next){"
+        , "    var db = resources.db,"
+        , "        mongodb = resources.mongodb;"
         , ""
         , "    next();"
         , "};"
