@@ -180,10 +180,10 @@ function runAirSpringMigrate(options, complete) {
                 var lastMigration = migrationsRun,
                     lastMigrationNum = lastMigration ? lastMigration.num : 0;
 
-                console.log('resulsts inside: ' + results.resources.airspring);
+                console.log('results inside: ' + results.resources);
                 migrate({
                     migrationTitle: 'migrations/.migrate',
-                    db: results // Name this better
+                    migrationScriptResources: results // Name this better
                 });
 
                 migrations(direction, lastMigrationNum, migrateTo).forEach(function(path){
