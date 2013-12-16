@@ -20,7 +20,7 @@ jasmine.getEnv().defaultTimeoutInterval = 80000;
 /* ---- Begin Tests ---- */
 describe("test core functionality of migration tool",function() {
     it('test MigrationStorageController', function(done) {
-        server = new mongodb.Server(serverName, port, {});
+        var server = new mongodb.Server(serverName, port, {});
 
         new mongodb.Db(dbName, server, {safe: true}).open(function (err, db) {
             expect(err).toBeFalsy();
@@ -167,7 +167,6 @@ describe("test core functionality of migration tool",function() {
 
                     options = {
                         config: config,
-                        config: config,
                         command: 'down',
                         args: []
                     };
@@ -175,9 +174,10 @@ describe("test core functionality of migration tool",function() {
                         expect(err).toBeFalsy();
                         done();
                     });
-                })
+                });
             }
-        }
+        };
+
         runCreateModule(0);
     });
 

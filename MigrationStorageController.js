@@ -32,7 +32,7 @@ MigrationStorageController.prototype = {
             if (err)  return complete(err, null);
 
             if (collection.length > 0) {
-                complete(err, collection[0])
+                complete(err, collection[0]);
             } else {
                 complete(err, null);
             }
@@ -43,7 +43,7 @@ MigrationStorageController.prototype = {
             if (err)  return complete(err, null);
 
             if (collection.length > 0) {
-                complete(err, collection[0])
+                complete(err, collection[0]);
             } else {
                 complete(err, null);
             }

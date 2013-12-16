@@ -42,7 +42,7 @@ function runAirSpringMigrate(options, complete) {
 
     if (typeof options.cwd !== 'undefined') chdir(options.cwd);
 
-    if (_.isFunction(options.log)) log = options.log; // override the log function
+    if (_.isFunction(options.log)) this.log = options.log; // override the log function
 
     /**
      * Load migrations.

@@ -19,20 +19,20 @@ var options = { args: [] },
  * Usage information.
  */
 var usage = [
+    '',
+    '  Usage: airspring-migrate [options] [command]',
+    '',
+    '  Options:',
+    '',
+    '     -c, --chdir <path>          change the working directory',
+    '     -cfg, --config <path>       DB config file name',
+    '',
+    '  Commands:',
+    '',
+    '     down   [name]    migrate down till given migration',
+    '     up     [name]    migrate up till given migration (the default command)',
+    '     create [title]   create a new migration file with optional [title]',
     ''
-    , '  Usage: airspring-migrate [options] [command]'
-    , ''
-    , '  Options:'
-    , ''
-    , '     -c, --chdir <path>    	    change the working directory'
-    , '     -cfg, --config <path>       DB config file name'
-    , ''
-    , '  Commands:'
-    , ''
-    , '     down   [name]    migrate down till given migration'
-    , '     up     [name]    migrate up till given migration (the default command)'
-    , '     create [title]   create a new migration file with optional [title]'
-    , ''
 ].join('\n');
 
 
