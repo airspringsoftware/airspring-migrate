@@ -4,22 +4,22 @@
  */
 /* Requirements */
 var fs = require('fs'),
-    mongodb = require('mongodb'),
+    mongojs = require('mongojs'),
     _ = require('underscore'),
     exec = require('child_process').exec;
 
 /* Extend Db to give it an exists function so we can determine if a collection exists */
-_.extend(mongodb.Db.prototype, {
-    'exists': function (collectionName, callback) {
-        this.collectionsInfo(collectionName).toArray(function (err, items) {
-            if (typeof callback === 'function') {
-                callback(err, items.length > 0);
-            }
+_.extend(mongojs.Database.prototype, {
+    'exists': function (collectionName, complete) {
+        this.getCollectionNames(function(err, names){
+            if (typeof complete === "function") complete(err, _.contains(names, collectionName));
         });
     }
 });
 
 module.exports = function (dbPath) {
+    var db = mongojs(dbPath);
+
     /* Takes a path and regex expression and returns files matching the patter at the specified path */
     var getFiles = function (path, regex) {
         var files  = fs.readdirSync(path);
@@ -51,40 +51,36 @@ module.exports = function (dbPath) {
 
     var resetDataBase = function (collectionsToRemove, done) {
         // Reset test database
-        mongodb.MongoClient.connect(dbPath, function(err, db) {
-            if(err) {
-                console.log('Error connecting to db: ' + err);
-            } else {
-                var dropIfExists = function(collectionName, callback) {
-                    db.exists(collectionName, function (err, exists) {
-                        if (exists){
-                            db.dropCollection(collectionName, function(err, result) {
-                                if (err) console.log('Error dropping ' + collectionName + ': ' + err);
-                                if (typeof callback === 'function') callback();
-                            });
-                        } else {
-                            if (typeof callback === 'function') callback();
-                        }
+        var dropIfExists = function(collectionName, callback) {
+            db.exists(collectionName, function (err, exists) {
+                if (exists){
+                    var collection = db.collection(collectionName);
+                    collection.drop(function(err, result) {
+                        if (err) console.log('Error dropping ' + collectionName + ': ' + err);
+                        if (typeof callback === 'function') callback();
                     });
-                };
+                } else {
+                    if (typeof callback === 'function') callback();
+                }
+            });
+        };
 
-                if (collectionsToRemove && collectionsToRemove.length > 0) {
-                    var dropCollections = function(i) {
-                        if (i < collectionsToRemove.length) {
-                            dropIfExists(collectionsToRemove[i], function() {
-                                dropCollections(++i);
-                            });
-                        } else {
-                            done();
-                        }
-                    };
-
-                    dropCollections(0);
+        if (collectionsToRemove && collectionsToRemove.length > 0) {
+            var dropCollections = function(i) {
+                if (i < collectionsToRemove.length) {
+                    dropIfExists(collectionsToRemove[i], function() {
+                        dropCollections(++i);
+                    });
                 } else {
                     done();
                 }
-            }
-        });
+            };
+
+            dropCollections(0);
+        } else {
+            done();
+        }
+
     };
 
 	var fetchTemplate = function (templateName) {

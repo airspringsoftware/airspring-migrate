@@ -35,13 +35,19 @@ To create a migration execute with `node airspring-migrate create` and optionall
 ```
 var mongodb = require('mongodb');
 
-exports.up = function (db, next) {
+exports.up = function (resources, next) {
+    var db = resources.db,
+        mongojs = resources.mongojs;
+
 	next();
 };
 
-exports.down = function (db. mext) {
+exports.down = function (resources. next) {
+    var db = resources.db,
+        mongojs = resources.mongojs;
+
 	next();
-};
+}
 ```
 
 All you have to do is populate these, invoking `next()` when complete, and you are ready to migrate! If you detect an error during the `exports.up` or `exports.down` pass next(err) and the migration will attempt to revert the opposite direction. If you're migrating up and error, it'll try to do that migration down.

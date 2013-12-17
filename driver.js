@@ -1,9 +1,8 @@
 /*
  * Requirements
  */
-var mongodb = require('mongodb'),
+var mongojs = require('mongojs'),
     _ = require('Underscore');
-
 
 /* Exports */
 var self = null;
@@ -16,29 +15,24 @@ function Driver (options) {
     self = this;
 }
 
-
 Driver.prototype =  {
     constructor: Driver,
     MigrationStorageController: require('./MigrationStorageController.js'),
     getConnection: function (opts, complete) {
         opts = getDbOpts(opts);
 
-        var server = new mongodb.Server(opts.host, opts.port, {});
+        var dbMongoJS = mongojs(opts.host + ':' + opts.port + '/' + opts.db);
+        var migrationStorageController = new self.MigrationStorageController(dbMongoJS);
 
-        new mongodb.Db(opts.db, server, {safe: true}).open(function (err, db) {
-            if (err) {
-                return complete(err);
+        complete (null, {
+            migrationStorageController: migrationStorageController,
+            resources: {
+                'mongojs': mongojs,
+                'db': dbMongoJS
             }
-            var migrationStorageController = new self.MigrationStorageController(db);
-
-            complete (null, {
-                migrationStorageController: migrationStorageController,
-                resources: {
-                    'mongodb': mongodb,
-                    'db': db
-                }
-            });
         });
+
+
     }
 };
 
