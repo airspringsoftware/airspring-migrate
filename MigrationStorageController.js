@@ -60,6 +60,13 @@ MigrationStorageController.prototype = {
             complete(err, objects);
         });
     },
+    migrationEntryExists: function(migration, complete) {
+        this.storage.find({ title: migration.title }, function(err, collection) {
+            if (err) return complete(err, null);
+
+            complete(null, collection.length > 0);
+        });
+    },
     removeMigrationEntry: function (migration, complete) {
         this.storage.findAndModify({
             query: { num: migration.num },
