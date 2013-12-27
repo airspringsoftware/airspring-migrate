@@ -183,7 +183,8 @@ function runAirSpringMigrate(options, complete) {
                 migrate({
                     migrationTitle: 'migrations/.migrate',
                     migrationScriptResources: results.resources, // Name this better
-                    migrationStorageController: results.migrationStorageController
+                    migrationStorageController: results.migrationStorageController,
+                    complete: complete
                 });
 
                 migrations(direction, lastMigrationNum, migrateTo).forEach(function(path){
