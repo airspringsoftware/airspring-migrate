@@ -63,7 +63,6 @@ function runAirSpringMigrate(options, complete) {
 
         var migrationsToRun = fs.readdirSync(scriptsPath)
             .filter(function (file) {
-                console.log('inFilter: ' + file);
                 var formatCorrect = file.match(/^\d+.*\.js$/),
                     migrationNum = formatCorrect && parseInt(file.match(/^\d+/)[0], 10),
                     isRunnable = formatCorrect && isDirectionUp ? migrationNum > lastMigrationNum : migrationNum <= lastMigrationNum;
@@ -130,7 +129,6 @@ function runAirSpringMigrate(options, complete) {
          * up
          */
         up: function(migrateTo){
-            console.log('performMigrationUp');
             performMigration('up', migrateTo);
         },
 
@@ -186,7 +184,6 @@ function runAirSpringMigrate(options, complete) {
 
                 var lastMigration = migrationsRun,
                     lastMigrationNum = lastMigration ? lastMigration.num : 0;
-                console.log('migrationTitle: ');
                 migrate({
                     migrationScriptResources: results.resources, // Name this better
                     migrationStorageController: results.migrationStorageController,
@@ -197,9 +194,6 @@ function runAirSpringMigrate(options, complete) {
                     console.log('require: ' + scriptPath);
                     var mod = require(scriptPath); // Import the migration file
                     var fileName = path.basename(scriptPath);
-                    console.log('num: ' + getMigrationNum(fileName));
-                    console.log('up: ' + mod.up);
-                    console.log('down: ' + mod.down);
                     migrate({
                         num: getMigrationNum(fileName),
                         title: fileName,
@@ -240,7 +234,6 @@ function runAirSpringMigrate(options, complete) {
     if (!_.has(commands, command)) {
         return abort('unknown command "' + command + '"', complete);
     }
-    console.log('command: ' + command);
     command = commands[command];
     command.apply(this, options.args);
 }
