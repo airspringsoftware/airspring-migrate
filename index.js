@@ -191,7 +191,7 @@ function runAirSpringMigrate(options, complete) {
                 });
 
                 migrations(direction, lastMigrationNum, migrateTo).forEach(function(scriptPath){
-                    var mod = require(scriptPath); // Import the migration file
+                    var mod = require(path.resolve(cwd, scriptPath)); // Import the migration file
                     var fileName = path.basename(scriptPath);
                     migrate({
                         num: getMigrationNum(fileName),
