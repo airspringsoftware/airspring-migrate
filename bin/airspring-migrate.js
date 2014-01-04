@@ -26,6 +26,7 @@ var usage = [
     '',
     '     -c, --chdir <path>          change the working directory',
     '     -cfg, --config <path>       DB config file name',
+    '     -sc    --scripts <path>    change the path to the script folder',
     '',
     '  Commands:',
     '',
@@ -117,6 +118,10 @@ while (args.length) {
         case '--silent':
             setSilent(true);
             break;
+        case '-sc':
+        case '--scripts':
+            options.scripts = required();
+            break;
         default:
             if (options.command) {
                 options.args.push(arg);
@@ -126,7 +131,6 @@ while (args.length) {
     }
 }
 
-options.config = new (require((options.cwd || process.cwd()) + path.sep + configFileName))();
 options.config = new (require((options.cwd || process.cwd()) + path.sep + configFileName))();
 options.log = log;
 

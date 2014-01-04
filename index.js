@@ -2,13 +2,15 @@ var migrate = require('./lib/migrate'),
     path = require('path'),
     join = path.join,
     fs = require('fs'),
-    _ = require('Underscore');
+    _ = require('Underscore'),
+    self = this;
 
 /**
  * Current working directory.
  */
 var previousWorkingDirectory = process.cwd(),
-    cwd = process.cwd();
+    cwd = process.cwd(),
+    scriptsPath = cwd + path.sep + 'migrations' + path.sep;
 
 var defaultDriverFileName = 'driver.js';
 
@@ -20,9 +22,10 @@ var defaultTemplate = '';
 /**
  * Log a keyed message.
  */
-function log(key, msg) {
+var log = function (key, msg) {
     console.log('  \033[90m%s :\033[0m \033[36m%s\033[0m', key, msg);
-}
+};
+
 
 /**
  * Slugify the given `str`.
@@ -32,18 +35,19 @@ function slugify(str) {
 }
 
 function runAirSpringMigrate(options, complete) {
+    if (typeof options === 'undefined') options = { args: [] };
+
     var config = options.config, // Convert the database config file to an object
         dbOptions = config.connectionOptions, // Get the database config options
         driver = config.driver,
         template = typeof config.template === 'undefined' ? defaultTemplate : config.template,
         callBackRan = false; // Get the database driver
 
-    if (typeof options === 'undefined') options = { args: [] };
 
     if (typeof options.cwd !== 'undefined') chdir(options.cwd);
+    if (_.isFunction(config.log)) log = options.log; // override the log function
 
-    if (_.isFunction(options.log)) this.log = options.log; // override the log function
-
+    if (typeof options.scripts !== 'undefined') scriptsPath = options.scripts;
     /**
      * Load migrations.
      * @param {String} direction
@@ -56,7 +60,7 @@ function runAirSpringMigrate(options, complete) {
             migrateToNum = hasMigrateTo ? parseInt(migrateTo, 10) : undefined,
             migrateToFound = !hasMigrateTo;
 
-        var migrationsToRun = fs.readdirSync('migrations')
+        var migrationsToRun = fs.readdirSync(scriptsPath)
             .filter(function (file) {
                 var formatCorrect = file.match(/^\d+.*\.js$/),
                     migrationNum = formatCorrect && parseInt(file.match(/^\d+/)[0], 10),
@@ -98,12 +102,12 @@ function runAirSpringMigrate(options, complete) {
 
                 return formatCorrect && isRunnable;
             }).map(function(file){
-                return 'migrations/' + file;
+                return scriptsPath + file;
             });
 
         if (!migrateToFound) {
             if (migrateToNum === lastMigrationNum) return abort('migration `' + migrateTo + '` has already been ran!');
-            return abort('migration `'+ migrateTo + '` not found!');
+            return abort('migration `'+ migrateTo + '` not found!', complete);
         }
 
         return migrationsToRun;
@@ -112,7 +116,7 @@ function runAirSpringMigrate(options, complete) {
     // create ./migrations
 
     try {
-        fs.mkdirSync('migrations', 0774);
+        fs.mkdirSync(scriptsPath, 0774);
     } catch (err) {
         // ignore
     }
@@ -151,7 +155,7 @@ function runAirSpringMigrate(options, complete) {
      * @param {String} name
      */
     function create(name) {
-        var fullPath = 'migrations' + path.sep + name + '.js';
+        var fullPath = scriptsPath + name + '.js';
         log('create', join(cwd, fullPath));
         fs.writeFileSync(fullPath, template);
         if (_.isFunction(complete)) complete();
@@ -187,10 +191,11 @@ function runAirSpringMigrate(options, complete) {
                     complete: complete
                 });
 
-                migrations(direction, lastMigrationNum, migrateTo).forEach(function(path){
-                    var mod = require(cwd + '/' + path); // Import the migration file
+                migrations(direction, lastMigrationNum, migrateTo).forEach(function(scriptPath){
+                    var mod = require(scriptPath); // Import the migration file
+                    var fileName = path.basename(scriptPath);
                     migrate({
-                        num: parseInt(path.split('/')[1].match(/^(\d+)/)[0], 10),
+                        num: getMigrationNum(fileName),
                         title: path,
                         up: mod.up,
                         down: mod.down
@@ -226,7 +231,9 @@ function runAirSpringMigrate(options, complete) {
 
     // invoke command
     var command = options.command || 'up';
-    if (!(command in commands)) return abort('unknown command "' + command + '"');
+    if (!_.has(commands, command)) {
+        return abort('unknown command "' + command + '"', complete);
+    }
     command = commands[command];
     command.apply(this, options.args);
 }
@@ -243,6 +250,10 @@ function abort(msg, complete) {
 
 function chdir(dir) {
     process.chdir(cwd = dir);
+}
+
+function getMigrationNum (scriptName) {
+    return parseInt(scriptName.match(/^(\d+)/)[0], 10);
 }
 
 module.exports = {
