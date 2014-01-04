@@ -10,7 +10,8 @@ var migrate = require('./lib/migrate'),
  */
 var previousWorkingDirectory = process.cwd(),
     cwd = process.cwd(),
-    scriptsPath = cwd + path.sep + 'migrations' + path.sep;
+    migrationScriptFolder = 'migrations';
+    scriptsPath = cwd + path.sep + migrationScriptFolder + path.sep;
 
 var defaultDriverFileName = 'driver.js';
 
@@ -62,6 +63,7 @@ function runAirSpringMigrate(options, complete) {
 
         var migrationsToRun = fs.readdirSync(scriptsPath)
             .filter(function (file) {
+                console.log('inFilter: ' + file);
                 var formatCorrect = file.match(/^\d+.*\.js$/),
                     migrationNum = formatCorrect && parseInt(file.match(/^\d+/)[0], 10),
                     isRunnable = formatCorrect && isDirectionUp ? migrationNum > lastMigrationNum : migrationNum <= lastMigrationNum;
@@ -128,6 +130,7 @@ function runAirSpringMigrate(options, complete) {
          * up
          */
         up: function(migrateTo){
+            console.log('performMigrationUp');
             performMigration('up', migrateTo);
         },
 
@@ -183,20 +186,23 @@ function runAirSpringMigrate(options, complete) {
 
                 var lastMigration = migrationsRun,
                     lastMigrationNum = lastMigration ? lastMigration.num : 0;
-
+                console.log('migrationTitle: ');
                 migrate({
-                    migrationTitle: 'migrations/.migrate',
                     migrationScriptResources: results.resources, // Name this better
                     migrationStorageController: results.migrationStorageController,
                     complete: complete
                 });
 
                 migrations(direction, lastMigrationNum, migrateTo).forEach(function(scriptPath){
+                    console.log('require: ' + scriptPath);
                     var mod = require(scriptPath); // Import the migration file
                     var fileName = path.basename(scriptPath);
+                    console.log('num: ' + getMigrationNum(fileName));
+                    console.log('up: ' + mod.up);
+                    console.log('down: ' + mod.down);
                     migrate({
                         num: getMigrationNum(fileName),
-                        title: path,
+                        title: fileName,
                         up: mod.up,
                         down: mod.down
                     });
@@ -234,6 +240,7 @@ function runAirSpringMigrate(options, complete) {
     if (!_.has(commands, command)) {
         return abort('unknown command "' + command + '"', complete);
     }
+    console.log('command: ' + command);
     command = commands[command];
     command.apply(this, options.args);
 }
