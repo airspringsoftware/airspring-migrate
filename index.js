@@ -46,7 +46,7 @@ function runAirSpringMigrate(options, complete) {
 
 
     if (typeof options.cwd !== 'undefined') chdir(options.cwd);
-    if (_.isFunction(config.log)) log = options.log; // override the log function
+    if (_.isFunction(config.log)) log = config.log; // override the log function
 
     if (typeof options.scripts !== 'undefined') scriptsPath = options.scripts;
     /**
@@ -191,7 +191,6 @@ function runAirSpringMigrate(options, complete) {
                 });
 
                 migrations(direction, lastMigrationNum, migrateTo).forEach(function(scriptPath){
-                    console.log('require: ' + scriptPath);
                     var mod = require(scriptPath); // Import the migration file
                     var fileName = path.basename(scriptPath);
                     migrate({

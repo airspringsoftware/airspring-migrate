@@ -59,28 +59,32 @@ describe("test core functionality of migration tool",function() {
             storage.addMigrationEntry(migration, function(err, object) {
                 expect(err).toBeFalsy();
 
-                storage.getFirstMigrationEntry(function (err, m) {
-                    expect(err).toBeFalsy();
-                    expect(m).toBeTruthy();
-                    expect(m.title.split('-')[1]).toBe('test0');
-
-                    storage.getLastMigrationEntry(function(err, m) {
+                setTimeout(function () {
+                    storage.getFirstMigrationEntry(function (err, m) {
                         expect(err).toBeFalsy();
                         expect(m).toBeTruthy();
-                        expect(m.title).toBe(cur  + '-' + 'test' + i);
+                        expect(m.title.split('-')[1]).toBe('test0');
 
-                        if (i < 4) {
-                            runTests(++i);
-                        } else {
-                            storage.getAllMigrationEntries(function (err, migrations) {
-                                expect(err).toBeFalsy();
-                                expect(migrations.length).toBe(5);
-                                removeMigrations();
-                            });
-                        }
+                        storage.getLastMigrationEntry(function(err, m) {
+                            expect(err).toBeFalsy();
+                            expect(m).toBeTruthy();
+                            expect(m.title).toBe(cur  + '-' + 'test' + i);
 
+                            if (i < 4) {
+                                runTests(++i);
+                            } else {
+                                storage.getAllMigrationEntries(function (err, migrations) {
+                                    expect(err).toBeFalsy();
+                                    expect(migrations.length).toBe(5);
+                                    removeMigrations();
+                                });
+                            }
+
+                        });
                     });
-                });
+                }, 100);
+
+
             });
         };
 
