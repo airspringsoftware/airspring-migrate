@@ -6,7 +6,8 @@
 var fs = require('fs'),
     mongojs = require('mongojs'),
     _ = require('underscore'),
-    exec = require('child_process').exec;
+    exec = require('child_process').exec,
+    scriptFolder = 'scripts';
 
 /* Extend Db to give it an exists function so we can determine if a collection exists */
 _.extend(mongojs.Database.prototype, {
@@ -39,11 +40,11 @@ module.exports = function (dbPath) {
 
     var resetFileSystem = function () {
         // Reset file system
-        var files = getFiles('./migrations', '^(\\d{13}[-]).*\\.js');
+        var files = getFiles('./' + scriptFolder, '^(\\d{13}[-]).*\\.js');
         _.each(files, function(element, index, list){
-            fs.unlink('./migrations/' + element, function(err){
+            fs.unlink('./' + scriptFolder + '/' + element, function(err){
                 if (err) {
-                    console.log('Error removing ./migrations/' + element + ': ' + error);
+                    console.log('Error removing ./' + scriptFolder + '/' + element + ': ' + error);
                 }
             });
         });
@@ -88,8 +89,8 @@ module.exports = function (dbPath) {
 	};
 
     var writeMigrationFile = function (migrationName, migrationScript, callback) {
-        var testFile = support.getFiles('./migrations', '^(\\d{13}[-])' + migrationName + '.js')[0];
-        fs.writeFile('./migrations/' + testFile, migrationScript, function(err){
+        var testFile = support.getFiles('./' + scriptFolder, '^(\\d{13}[-])' + migrationName + '.js')[0];
+        fs.writeFile('./' + scriptFolder + '/' + testFile, migrationScript, function(err){
             expect(err).toBeFalsy();
             callback();
         });
@@ -101,10 +102,10 @@ module.exports = function (dbPath) {
             expect(error).toBeFalsy();
 
             // Check that the create command produced a file
-            expect(fileExists('./migrations', '^(\\d{13}[-])' + options.migrationName + '.js')).toBe(true);
+            expect(fileExists('./' + scriptFolder, '^(\\d{13}[-])' + options.migrationName + '.js')).toBe(true);
 
-            var testFile = getFiles('./migrations', '^(\\d{13}[-])' + options.migrationName + '.js')[0],
-                path = './migrations/' + testFile;
+            var testFile = getFiles('./' + scriptFolder, '^(\\d{13}[-])' + options.migrationName + '.js')[0],
+                path = './' + scriptFolder + '/' + testFile;
 
             fs.readFile(path, 'utf8', function(err, data) {
                 expect(err).toBeFalsy();

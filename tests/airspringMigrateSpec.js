@@ -11,7 +11,8 @@ var Migrations = require('../'),
     dbPath = 'mongodb://' + serverName + ':' + port + '/' + dbName,
     support = require('./DataBaseMigrationSpec-Support.js')(dbPath),
     exec = require('child_process').exec,
-    mongojs = require('mongojs');
+    mongojs = require('mongojs'),
+    migrationFolderName = 'scripts';
 
 // Specify the default timeout
 jasmine.getEnv().defaultTimeoutInterval = 80000;
@@ -40,7 +41,6 @@ describe("test core functionality of migration tool",function() {
                     storage.getAllMigrationEntries(function (err, migrations) {
                         expect(err).toBeFalsy();
                         expect(migrations.length).toBe(0);
-
                         done();
                     });
                 }
@@ -140,7 +140,7 @@ describe("test core functionality of migration tool",function() {
             if (i < 4) {
                 Migrations.run(options, function (err) {
                     expect(err).toBeFalsy();
-                    expect(support.fileExists('./migrations', '^(\\d{13}[-])test'  + i +  '.js')).toBe(true);
+                    expect(support.fileExists('./' + migrationFolderName, '^(\\d{13}[-])test'  + i +  '.js')).toBe(true);
 
                     runCreateModule(++i);
                 });

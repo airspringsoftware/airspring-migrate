@@ -10,7 +10,7 @@ var migrate = require('./lib/migrate'),
  */
 var previousWorkingDirectory = process.cwd(),
     cwd = process.cwd(),
-    migrationScriptFolder = 'migrations';
+    migrationScriptFolder = 'scripts';
     scriptsPath = cwd + path.sep + migrationScriptFolder + path.sep;
 
 var defaultDriverFileName = 'driver.js';
