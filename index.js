@@ -14,6 +14,7 @@ var previousWorkingDirectory = process.cwd(),
     scriptsPath = cwd + path.sep + migrationScriptFolder + path.sep,
     migrationFilePattern = /^\d+.*\.js$/;
 
+
 var defaultDriverFileName = 'driver.js';
 
 /**
@@ -263,6 +264,11 @@ function chdir(dir) {
 
 function getMigrationNum (scriptName) {
     return parseInt(scriptName.match(/^(\d+)/)[0], 10);
+}
+
+function padString(pad, str) {
+    var str = str.toString(); // cast to string
+    return pad.substring(0, pad.length - str.length) + str;
 }
 
 function padString(pad, str) {
