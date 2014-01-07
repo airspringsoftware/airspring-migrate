@@ -10,7 +10,7 @@ var migrate = require('./lib/migrate'),
  */
 var previousWorkingDirectory = process.cwd(),
     cwd = process.cwd(),
-    migrationScriptFolder = 'scripts';
+    migrationScriptFolder = 'scripts',
     scriptsPath = cwd + path.sep + migrationScriptFolder + path.sep;
 
 var defaultDriverFileName = 'driver.js';
@@ -41,14 +41,14 @@ function runAirSpringMigrate(options, complete) {
     var config = options.config, // Convert the database config file to an object
         dbOptions = config.connectionOptions, // Get the database config options
         driver = config.driver,
-        template = typeof config.template === 'undefined' ? defaultTemplate : config.template,
-        callBackRan = false; // Get the database driver
-
+        template = typeof config.template === 'undefined' ? defaultTemplate : config.template;
 
     if (typeof options.cwd !== 'undefined') chdir(options.cwd);
     if (_.isFunction(config.log)) log = config.log; // override the log function
 
     if (typeof options.scripts !== 'undefined') scriptsPath = options.scripts;
+    if (scriptsPath.substr(scriptsPath.length-1) !== path.sep) scriptsPath += path.sep;
+    
     /**
      * Load migrations.
      * @param {String} direction
