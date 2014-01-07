@@ -108,10 +108,10 @@ describe("test core functionality of migration tool",function() {
 
     it('using the command line', function (done) {
         support.runCreate({ migrationName: 'test1', callback: function() {
-            exec("airspring-migrate --config ../default-config.js up", function (error, stdout, stderr) {
+            exec("node ../bin/airspring-migrate.js --config ../default-config.js up", function (error, stdout, stderr) {
                 expect(error).toBeFalsy();
 
-                exec("airspring-migrate --config ../default-config.js down", function (error, stdout, stderr) {
+                exec("node ../bin/airspring-migrate.js --config ../default-config.js down", function (error, stdout, stderr) {
                     expect(error).toBeFalsy();
 
                     done();
@@ -140,7 +140,7 @@ describe("test core functionality of migration tool",function() {
             if (i < 4) {
                 Migrations.run(options, function (err) {
                     expect(err).toBeFalsy();
-                    expect(support.fileExists('./' + migrationFolderName, '^(\\d{13}[-])test'  + i +  '.js')).toBe(true);
+                    expect(support.fileExists('./' + migrationFolderName, '^(\\d{17}[-])test'  + i +  '.js')).toBe(true);
 
                     runCreateModule(++i);
                 });

@@ -40,7 +40,7 @@ module.exports = function (dbPath) {
 
     var resetFileSystem = function () {
         // Reset file system
-        var files = getFiles('./' + scriptFolder, '^(\\d{13}[-]).*\\.js');
+        var files = getFiles('./' + scriptFolder, '^(\\d{17}[-]).*\\.js');
         _.each(files, function(element, index, list){
             fs.unlink('./' + scriptFolder + '/' + element, function(err){
                 if (err) {
@@ -89,7 +89,7 @@ module.exports = function (dbPath) {
 	};
 
     var writeMigrationFile = function (migrationName, migrationScript, callback) {
-        var testFile = support.getFiles('./' + scriptFolder, '^(\\d{13}[-])' + migrationName + '.js')[0];
+        var testFile = support.getFiles('./' + scriptFolder, '^(\\d{17}[-])' + migrationName + '.js')[0];
         fs.writeFile('./' + scriptFolder + '/' + testFile, migrationScript, function(err){
             expect(err).toBeFalsy();
             callback();
@@ -102,9 +102,9 @@ module.exports = function (dbPath) {
             expect(error).toBeFalsy();
 
             // Check that the create command produced a file
-            expect(fileExists('./' + scriptFolder, '^(\\d{13}[-])' + options.migrationName + '.js')).toBe(true);
+            expect(fileExists('./' + scriptFolder, '^(\\d{17}[-])' + options.migrationName + '.js')).toBe(true);
 
-            var testFile = getFiles('./' + scriptFolder, '^(\\d{13}[-])' + options.migrationName + '.js')[0],
+            var testFile = getFiles('./' + scriptFolder, '^(\\d{17}[-])' + options.migrationName + '.js')[0],
                 path = './' + scriptFolder + '/' + testFile;
 
             fs.readFile(path, 'utf8', function(err, data) {
