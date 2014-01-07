@@ -52,7 +52,7 @@ MigrationStorageController.prototype = {
     addMigrationEntry: function (migration, complete) {
         var self = this;
         this.storage.insert({
-            num: migration.num || parseInt(migration.title.match(/\d+/)[0].split('-')[0], 10),
+            num: migration.num || parseInt(migration.title.match(/\d+/)[0].split('-')[0], 17),
             title: migration.title.split('/').pop().split('.js')[0],
             executed: new Date()
         }, function (err, objects) {
