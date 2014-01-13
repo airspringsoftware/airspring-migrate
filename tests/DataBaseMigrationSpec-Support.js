@@ -4,19 +4,12 @@
  */
 /* Requirements */
 var fs = require('fs'),
-    mongojs = require('mongojs'),
     _ = require('underscore'),
     exec = require('child_process').exec,
-    scriptFolder = 'scripts';
-
-/* Extend Db to give it an exists function so we can determine if a collection exists */
-_.extend(mongojs.Database.prototype, {
-    'exists': function (collectionName, complete) {
-        this.getCollectionNames(function(err, names){
-            if (typeof complete === "function") complete(err, _.contains(names, collectionName));
-        });
-    }
-});
+    scriptFolder = 'scripts',
+    runCommand = 'node ../bin/airspring-migrate.js --config ../default-config.js',
+    Migrations = require('../'),
+    mongojs = Migrations.mongojs;
 
 module.exports = function (dbPath) {
     var db = mongojs(dbPath);
@@ -50,38 +43,10 @@ module.exports = function (dbPath) {
         });
     };
 
-    var resetDataBase = function (collectionsToRemove, done) {
-        // Reset test database
-        var dropIfExists = function(collectionName, callback) {
-            db.exists(collectionName, function (err, exists) {
-                if (exists){
-                    var collection = db.collection(collectionName);
-                    collection.drop(function(err, result) {
-                        if (err) console.log('Error dropping ' + collectionName + ': ' + err);
-                        if (typeof callback === 'function') callback();
-                    });
-                } else {
-                    if (typeof callback === 'function') callback();
-                }
-            });
-        };
-
-        if (collectionsToRemove && collectionsToRemove.length > 0) {
-            var dropCollections = function(i) {
-                if (i < collectionsToRemove.length) {
-                    dropIfExists(collectionsToRemove[i], function() {
-                        dropCollections(++i);
-                    });
-                } else {
-                    done();
-                }
-            };
-
-            dropCollections(0);
-        } else {
-            done();
-        }
-
+    var resetDataBase = function (dbName, done) {
+        exec('mongo ' + dbName + ' --eval "db.dropDatabase()"', function (error, stdout, stderr) {
+            done(error);
+        });
     };
 
 	var fetchTemplate = function (templateName) {
@@ -89,7 +54,7 @@ module.exports = function (dbPath) {
 	};
 
     var writeMigrationFile = function (migrationName, migrationScript, callback) {
-        var testFile = support.getFiles('./' + scriptFolder, '^(\\d{17}[-])' + migrationName + '.js')[0];
+        var testFile = getFiles('./' + scriptFolder, '^(\\d{17}[-])' + migrationName + '.js')[0];
         fs.writeFile('./' + scriptFolder + '/' + testFile, migrationScript, function(err){
             expect(err).toBeFalsy();
             callback();
@@ -98,7 +63,7 @@ module.exports = function (dbPath) {
 
     /* options { migrationName, callback, [migrationScript] } */
     var runCreate = function(options) {
-        exec('airspring-migrate create --config ../default-config.js ' + options.migrationName, function (error, stdout, stderr) {
+        exec(runCommand + ' create ' + options.migrationName, function (error, stdout, stderr) {
             expect(error).toBeFalsy();
 
             // Check that the create command produced a file
@@ -123,14 +88,15 @@ module.exports = function (dbPath) {
     };
 
     var obj = {
-        afterEach: function (collectionsToRemove, done) {
+        afterEach: function (dbName, done) {
             resetFileSystem();
-            resetDataBase(collectionsToRemove, done);
+            resetDataBase(dbName, done);
         },
         fileExists: fileExists,
         getFiles: getFiles,
 		fetchTemplate: fetchTemplate,
-        runCreate: runCreate
+        runCreate: runCreate,
+        mongojs: mongojs // export mongojs with extended Database prototype
     };
 
     return obj;

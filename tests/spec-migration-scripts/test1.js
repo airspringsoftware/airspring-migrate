@@ -1,13 +1,21 @@
-exports.up = function(resources, next){
-    var db = resources.db,
-        mongojs = resources.mongojs;
+var collectionName = 'test1';
 
-    next();
+exports.up = function(resources, next){
+    var db = resources.db;
+
+    var mycollection = db.collection(collectionName);
+    mycollection.save({ title: 'doc1' }, function (err) {
+        if (err) return next(err);
+        next();
+    });
 };
 
 exports.down = function(resources, next){
-    var db = resources.db,
-        mongojs = resources.mongojs;
+    var db = resources.db;
 
-    next();
+    var mycollection = db.collection(collectionName);
+    mycollection.drop(function (err) {
+        if (err) return next(err);
+        next();
+    });
 };

@@ -14,7 +14,7 @@ Configuration.prototype = {
     constructor: Configuration,
     host : "localhost",
     port: 27017,
-    db   : "app-db",
+    db   : "test-db",
     driver: new (require(__dirname + "/driver.js"))(),
     template: [
         "exports.up = function(resources, next){",

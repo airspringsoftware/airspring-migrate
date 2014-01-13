@@ -1,8 +1,18 @@
 var migrate = require('./lib/migrate'),
     path = require('path'),
+    mongojs = require('mongojs'),
     fs = require('fs'),
     _ = require('Underscore'),
     self = this;
+
+// Extend Db to give it an exists function so we can determine if a collection exists
+_.extend(mongojs.Database.prototype, {
+    exists: function (collectionName, complete) {
+        this.getCollectionNames(function(err, names){
+            if (typeof complete === "function") complete(err, _.contains(names, collectionName));
+        });
+    }
+});
 
 /**
  * Current working directory.
@@ -278,5 +288,6 @@ module.exports = {
     run: runAirSpringMigrate,
     Driver: require(__dirname + '/driver.js'),
     MigrationStorageController: require(__dirname + '/MigrationStorageController.js'),
-    Configuration: require(__dirname + '/default-config.js')
+    Configuration: require(__dirname + '/default-config.js'),
+    mongojs: mongojs
 };
