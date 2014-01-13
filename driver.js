@@ -2,7 +2,8 @@
  * Requirements
  */
 var mongojs = require('mongojs'),
-    _ = require('Underscore');
+    _ = require('Underscore'),
+    MigrationStorageController = require('./MigrationStorageController.js');
 
 /* Exports */
 var self = null;
@@ -16,13 +17,15 @@ function Driver (options) {
 }
 
 Driver.prototype =  {
-    constructor: Driver,
-    MigrationStorageController: require('./MigrationStorageController.js'),
     getConnection: function (opts, complete) {
-        opts = getDbOpts(opts);
+        try {
+            otps = self.getDbOpts(opts);
+        } catch (ex) {
+            return complete(ex, null);
+        }
 
         var dbMongoJS = mongojs(opts.host + ':' + opts.port + '/' + opts.db);
-        var migrationStorageController = new self.MigrationStorageController(dbMongoJS);
+        var migrationStorageController = new MigrationStorageController(dbMongoJS);
 
         complete (null, {
             migrationStorageController: migrationStorageController,
@@ -32,21 +35,14 @@ Driver.prototype =  {
             }
         });
 
+    },
+    getDbOpts: function (opts) {
+        opts = _.extend({
+            host: 'localhost',
+            port: 27017 }, opts);
 
+        if (typeof opts.db === 'undefined') throw new Error('You must supply a valid database option in the config');
+
+        return opts;
     }
 };
-
-/* --- Private Functions --- */
-
-/*
- * Fills in defaults in the event that the config file is null
- */
-function getDbOpts(opts) {
-    opts = opts || {
-        host: 'localhost',
-        db: 'my-app',
-        port: 27017
-    };
-    opts.port = opts.port || 27017;
-    return opts;
-}

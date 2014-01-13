@@ -1,6 +1,5 @@
 var migrate = require('./lib/migrate'),
     path = require('path'),
-    join = path.join,
     fs = require('fs'),
     _ = require('Underscore'),
     self = this;
@@ -41,7 +40,6 @@ function runAirSpringMigrate(options, complete) {
     if (typeof options === 'undefined') options = { args: [] };
 
     var config = options.config, // Convert the database config file to an object
-        dbOptions = config.connectionOptions, // Get the database config options
         driver = config.driver,
         template = typeof config.template === 'undefined' ? defaultTemplate : config.template;
 
@@ -179,7 +177,7 @@ function runAirSpringMigrate(options, complete) {
      */
     function performMigration(direction, migrateTo) {
 
-        driver.getConnection(dbOptions, function (err, results) {
+        driver.getConnection(config, function (err, results) {
             if (err) {
                 //console.error('Error connecting to database');
                 return abort(err, complete);

@@ -12,11 +12,9 @@ function Configuration(options) {
 
 Configuration.prototype = {
     constructor: Configuration,
-    connectionOptions: {
-        host : "localhost",
-        port: 27017,
-        db   : "app-db"
-    },
+    host : "localhost",
+    port: 27017,
+    db   : "app-db",
     driver: new (require(__dirname + "/driver.js"))(),
     template: [
         "exports.up = function(resources, next){",
