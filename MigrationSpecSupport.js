@@ -32,8 +32,10 @@ _.extend(DataBaseMigrationSpecSupport.prototype, {
     getFiles: function (path, regex) {
         var files  = fs.readdirSync(path);
 
+        if (!(regex instanceof RegExp)) regex = new RegExp(regex, 'i');
+
         var matches = files.filter(function (fileName) {
-            return new RegExp(regex, 'i').test(fileName);
+            return regex.test(fileName);
         });
 
         return matches;
@@ -45,7 +47,7 @@ _.extend(DataBaseMigrationSpecSupport.prototype, {
     },
     resetFileSystem: function (rootPath) {
         // Reset file system
-        var files = this.getFiles(rootPath + this.scriptsFolder, '^(\\d{17}[-]).*\\.js');
+        var files = this.getFiles(rootPath + this.scriptsFolder, /^(\d{17}[-]).*\.js/i);
         var self = this;
         _.each(files, function (element) {
             fs.unlink(rootPath + self.scriptsFolder + '/' + element, function(err){
