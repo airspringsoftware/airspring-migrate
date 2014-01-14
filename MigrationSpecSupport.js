@@ -17,9 +17,9 @@ _.extend(DataBaseMigrationSpecSupport.prototype, {
     // Remove any files created by a spec test and restore the database to it's initial pre-spec state
     dbFSCleanUp: function (options) {
         this.resetFileSystem(options.rootPath);
+        var self = this;
         this.resetDataBase(options.dbName, function (error) {
             if (error) return complete(error);
-            var self = this;
             if (typeof options.dumpPath === 'string') {
                 self.restoreDataBase(options.dbName, options.dumpPath, options.complete);
             } else {
