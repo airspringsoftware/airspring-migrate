@@ -2,18 +2,17 @@ var Migrations = require('../'),
     MigrationStorageController = Migrations.MigrationStorageController,
     _ = require('underscore'),
     path = require('path'),
-    Driver = Migrations.Driver,
     Configuration = Migrations.Configuration,
     config = new Configuration(),
     dbPath = 'mongodb://' + config.host + ':' + config.port + '/' + config.db,
-    support = require('./DataBaseMigrationSpec-Support.js')(dbPath),
     exec = require('child_process').exec,
     mongojs = Migrations.mongojs,
     migrationFolderName = 'scripts',
-    db = mongojs(dbPath),
-    storage = new MigrationStorageController(db);
+    db = new mongojs(dbPath),
+    storage = new MigrationStorageController(db),
     runCommand = 'node ../bin/airspring-migrate.js --config ../default-config.js',
-    scriptFolder = 'scripts';
+    scriptFolder = 'scripts',
+    support = new Migrations.MigrationSpecSupport(scriptFolder, runCommand);
 
 // Specify the default timeout
 jasmine.getEnv().defaultTimeoutInterval = 80000;
@@ -25,90 +24,14 @@ describe('test MigrationStorageController', function () {
         runAfterEach(done);
     });
 
-    it ('ability to check for and create a storage container', function (done) {
-        storage.hasMigrationStorage(function (err, exists) {
-            expect(err).toBeFalsy();
-            expect(exists).toBe(false);
-
-            storage.createMigrationStorage(function (err, collection) {
-                expect(err).toBeFalsy();
-
-                storage.hasMigrationStorage(function (err, exists) {
-                    expect(err).toBeFalsy();
-                    expect(exists).toBe(true);
-                    done();
-                });
-
-            });
-        });
+    it ('has the ability to check for and create a storage container', function (done) {
+        support.testMigrationControllerStorageCreation(storage, done);
     });
 
     it ('ability to create and remove migrations from the storage container', function (done) {
-        var removeMigrations = function (storage, complete) {
-            storage.getFirstMigrationEntry(function(err, object) {
-                expect(err).toBeFalsy();
-
-                if (object !== null) {
-                    var m = object;
-                    storage.removeMigrationEntry(m, function(err, object){
-                        expect(err).toBeFalsy();
-
-                        removeMigrations(storage, complete);
-                    });
-                } else {
-                    storage.getAllMigrationEntries(function (err, migrations) {
-                        expect(err).toBeFalsy();
-                        expect(migrations.length).toBe(0);
-                        complete();
-                    });
-                }
-
-            });
-        };
-
-        var addMigrations = function (i, storage, complete) {
-            var cur = Date.now();
-            var migration = {
-                num: cur,
-                title: cur  + '-' + 'test' + i + '.js'
-            };
-
-            storage.addMigrationEntry(migration, function(err, object) {
-                expect(err).toBeFalsy();
-
-                setTimeout(function () {
-                    storage.getFirstMigrationEntry(function (err, m) {
-                        expect(err).toBeFalsy();
-                        expect(m).toBeTruthy();
-                        expect(m.title.split('-')[1]).toBe('test0');
-
-                        storage.getLastMigrationEntry(function(err, m) {
-                            expect(err).toBeFalsy();
-                            expect(m).toBeTruthy();
-                            expect(m.title).toBe(cur  + '-' + 'test' + i);
-
-                            if (i < 4) {
-                                addMigrations(++i, storage, complete);
-                            } else {
-                                storage.getAllMigrationEntries(function (err, migrations) {
-                                    expect(err).toBeFalsy();
-                                    expect(migrations.length).toBe(5);
-                                    complete();
-                                });
-                            }
-
-                        });
-                    });
-                }, 100);
-            });
-        };
-
-        addMigrations(0, storage, function () {
-            removeMigrations(storage, done);
-        });
+        support.testMigrationControllerCanAddAndRemoveMigrations(storage, done);
     });
 });
-
 
 describe('test command line functionality,', function () {
     afterEach(function (done) {
@@ -286,11 +209,13 @@ describe('test programmatic functionality', function () {
 
 
 function runAfterEach (done) {
-    if (db !== null) {
-        support.afterEach(config.db, function(err, response){
+    support.dbFSCleanUp({
+        rootPath: './',
+        dbName: config.db,
+        complete: function (err, response) {
             if (err) console.error(err);
             done();
-        });
-    }
+        }
+    });
 }
 

@@ -3,6 +3,7 @@ var migrate = require('./lib/migrate'),
     mongojs = require('mongojs'),
     fs = require('fs'),
     _ = require('Underscore'),
+    MigrationSpecSupport = require('./MigrationSpecSupport'),
     self = this;
 
 // Extend Db to give it an exists function so we can determine if a collection exists
@@ -275,12 +276,7 @@ function getMigrationNum (scriptName) {
 }
 
 function padString(pad, str) {
-    var str = str.toString(); // cast to string
-    return pad.substring(0, pad.length - str.length) + str;
-}
-
-function padString(pad, str) {
-    var str = str.toString(); // cast to string
+    str = str.toString(); // cast to string
     return pad.substring(0, pad.length - str.length) + str;
 }
 
@@ -289,5 +285,6 @@ module.exports = {
     Driver: require(__dirname + '/driver.js'),
     MigrationStorageController: require(__dirname + '/MigrationStorageController.js'),
     Configuration: require(__dirname + '/default-config.js'),
-    mongojs: mongojs
+    mongojs: mongojs,
+    MigrationSpecSupport: MigrationSpecSupport
 };
