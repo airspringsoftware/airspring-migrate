@@ -19,8 +19,9 @@ _.extend(DataBaseMigrationSpecSupport.prototype, {
         this.resetFileSystem(options.rootPath);
         this.resetDataBase(options.dbName, function (error) {
             if (error) return complete(error);
+            var self = this;
             if (typeof options.dumpPath === 'string') {
-                this.restoreDataBase(options.dbName, options.dumpPath, options.complete);
+                self.restoreDataBase(options.dbName, options.dumpPath, options.complete);
             } else {
                 options.complete();
             }
