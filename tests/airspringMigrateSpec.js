@@ -52,7 +52,9 @@ describe('test command line functionality,', function () {
                 migrationName: migrationName,
                 migrationScript: support.fetchTemplate(migrationName),
                 callback: function () {
-                    setTimeout(createMigrations(++i, complete), 10);
+                    setTimeout(function () {
+                        createMigrations(++i, complete);
+                    }, 1000);
                 }
             });
         } else {
@@ -121,7 +123,7 @@ describe('test command line functionality,', function () {
         createMigrations(function () {
             checkInitialConditions(function () {
 
-                var testFile = support.getFiles('./' + scriptFolder, '^(\\d{17}[-])' + 'test2' + '.js')[0];
+                var testFile = support.getFiles('./' + scriptFolder, '^(\\d{14}[-])' + 'test2' + '.js')[0];
                 var migrationMiddle = path.basename(testFile, '.js');
 
                 exec(runCommand + ' up ' + migrationMiddle, function(error, stdout, stderr) {
@@ -176,7 +178,7 @@ describe('test programmatic functionality', function () {
             if (i < 4) {
                 Migrations.run(options, function (err) {
                     expect(err).toBeFalsy();
-                    expect(support.fileExists('./' + migrationFolderName, '^(\\d{17}[-])test'  + i +  '.js')).toBe(true);
+                    expect(support.fileExists('./' + migrationFolderName, '^(\\d{14}[-])test'  + i +  '.js')).toBe(true);
 
                     runCreateModule(++i);
                 });

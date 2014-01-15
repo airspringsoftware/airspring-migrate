@@ -13,6 +13,8 @@ function DataBaseMigrationSpecSupport(scriptsFolder, runCommand) {
     this.runCommand = runCommand;
 }
 
+var timeStampPattern = '^(\\d{14}[-])';
+
 _.extend(DataBaseMigrationSpecSupport.prototype, {
     // Remove any files created by a spec test and restore the database to it's initial pre-spec state
     dbFSCleanUp: function (options) {
@@ -47,7 +49,7 @@ _.extend(DataBaseMigrationSpecSupport.prototype, {
     },
     resetFileSystem: function (rootPath) {
         // Reset file system
-        var files = this.getFiles(rootPath + this.scriptsFolder, /^(\d{17}[-]).*\.js/i);
+        var files = this.getFiles(rootPath + this.scriptsFolder, /^(\d{14}[-]).*\.js/i);
         var self = this;
         _.each(files, function (element) {
             fs.unlink(rootPath + self.scriptsFolder + '/' + element, function(err){
@@ -72,7 +74,7 @@ _.extend(DataBaseMigrationSpecSupport.prototype, {
         return fs.readFileSync('./spec-migration-scripts/' + templateName + '.js', 'utf8');
     },
     writeMigrationFile: function (migrationName, migrationScript, callback) {
-        var testFile = this.getFiles('./' + this.scriptsFolder, '^(\\d{17}[-])' + migrationName + '.js')[0];
+        var testFile = this.getFiles('./' + this.scriptsFolder, timeStampPattern + migrationName + '.js')[0];
         fs.writeFile('./' + this.scriptsFolder + '/' + testFile, migrationScript, function(err){
             expect(err).toBeFalsy();
             callback();
@@ -85,9 +87,9 @@ _.extend(DataBaseMigrationSpecSupport.prototype, {
             expect(error).toBeFalsy();
 
             // Check that the create command produced a file
-            expect(self.fileExists('./' + self.scriptsFolder, '^(\\d{17}[-])' + options.migrationName + '.js')).toBe(true);
+            expect(self.fileExists('./' + self.scriptsFolder, timeStampPattern + options.migrationName + '.js')).toBe(true);
 
-            var testFile = self.getFiles('./' + self.scriptsFolder, '^(\\d{17}[-])' + options.migrationName + '.js')[0],
+            var testFile = self.getFiles('./' + self.scriptsFolder, timeStampPattern + options.migrationName + '.js')[0],
                 path = './' + self.scriptsFolder + '/' + testFile;
 
             fs.readFile(path, 'utf8', function(err, data) {

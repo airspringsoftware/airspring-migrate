@@ -161,8 +161,7 @@ function runAirSpringMigrate(options, complete) {
                 padString('00', (currDate.getMonth() + 1)) +
                 padString('00', currDate.getHours()) +
                 padString('00', currDate.getMinutes()) +
-                padString('00', currDate.getSeconds()) +
-                padString('000', currDate.getMilliseconds());
+                padString('00', currDate.getSeconds());
 
             title = title ? dateString + '-' + title : dateString;
             create(title);
