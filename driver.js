@@ -2,7 +2,7 @@
  * Requirements
  */
 var mongojs = require('mongojs'),
-    _ = require('Underscore'),
+    _ = require('underscore'),
     MigrationStorageController = require('./MigrationStorageController.js');
 
 /* Exports */

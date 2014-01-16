@@ -1,4 +1,4 @@
-var _ = require('Underscore'),
+var _ = require('underscore'),
     path = require('path'),
     join = path.join;
 

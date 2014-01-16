@@ -2,7 +2,7 @@ var migrate = require('./lib/migrate'),
     path = require('path'),
     mongojs = require('mongojs'),
     fs = require('fs'),
-    _ = require('Underscore'),
+    _ = require('underscore'),
     MigrationSpecSupport = require('./MigrationSpecSupport'),
     self = this;
 
