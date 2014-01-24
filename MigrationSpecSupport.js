@@ -18,7 +18,8 @@ var timeStampPattern = '^(\\d{14}[-])';
 _.extend(DataBaseMigrationSpecSupport.prototype, {
     // Remove any files created by a spec test and restore the database to it's initial pre-spec state
     dbFSCleanUp: function (options) {
-        this.resetFileSystem(options.rootPath);
+        if (!options) options = {};
+        if (options.resetFileSystem) this.resetFileSystem(options.rootPath);
         var self = this;
         this.resetDataBase(options.dbName, function (error) {
             if (error) return complete(error);
@@ -32,7 +33,15 @@ _.extend(DataBaseMigrationSpecSupport.prototype, {
     },
     // Takes a path and regex expression and returns files matching the patter at the specified path
     getFiles: function (path, regex) {
-        var files  = fs.readdirSync(path);
+        var files = null;
+
+        try
+        {
+            files = fs.readdirSync(path);
+        } catch(ex) {
+            console.error('the path "' + path + '" does not exist');
+            return [];
+        }
 
         if (!(regex instanceof RegExp)) regex = new RegExp(regex, 'i');
 

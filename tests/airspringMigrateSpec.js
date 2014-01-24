@@ -214,6 +214,7 @@ function runAfterEach (done) {
     support.dbFSCleanUp({
         rootPath: './',
         dbName: config.db,
+        resetFileSystem: true,
         complete: function (err, response) {
             if (err) console.error(err);
             done();
