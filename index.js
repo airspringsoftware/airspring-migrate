@@ -59,7 +59,7 @@ function runAirSpringMigrate(options, complete) {
 
     if (typeof options.scripts !== 'undefined') scriptsPath = options.scripts;
     if (scriptsPath.substr(scriptsPath.length-1) !== path.sep) scriptsPath += path.sep;
-    
+
     /**
      * Load migrations.
      * @param {String} direction
@@ -140,7 +140,15 @@ function runAirSpringMigrate(options, complete) {
          * up
          */
         up: function(migrateTo){
-            performMigration('up', migrateTo);
+            if (options.force) {
+                clearMigrations(function(err) {
+                    if (err) return abort(err);
+
+                    performMigration('up', migrateTo);
+                });
+            } else {
+                performMigration('up', migrateTo);
+            }
         },
 
         /**
@@ -157,8 +165,8 @@ function runAirSpringMigrate(options, complete) {
             var currDate = new Date(),
                 title = slugify([].slice.call(arguments).join(' '));
             var dateString = currDate.getFullYear() +
-                padString('00', currDate.getDate()) +
                 padString('00', (currDate.getMonth() + 1)) +
+                padString('00', currDate.getDate()) +
                 padString('00', currDate.getHours()) +
                 padString('00', currDate.getMinutes()) +
                 padString('00', currDate.getSeconds());
@@ -180,6 +188,40 @@ function runAirSpringMigrate(options, complete) {
         if (_.isFunction(complete)) complete();
     }
 
+    function clearMigrations(complete) {
+        log('clear', 'migrations collection');
+        driver.getConnection(config, function (err, results) {
+            var migrationStorage = results.migrationStorageController;
+            if (err) {
+                //console.error('Error connecting to database');
+                if (_.isFunction(complete)) complete(err);
+            }
+
+            // clear the previous migrations and start again
+            migrationStorage.getAllMigrationEntries(function (err, collection){
+                if (err) {
+                    if (_.isFunction(complete)) complete(err);
+                    return;
+                }
+                if (collection.length <= 0) {
+                    if (_.isFunction(complete)) complete();
+                    return;
+                }
+
+                var migrationRemoved = _.after(collection.length, function() {
+                    if (_.isFunction(complete)) complete();
+                });
+
+                _.each(collection, function (m) {
+                    log('remove', 'migration ' + m.title);
+                    migrationStorage.removeMigrationEntry(m, function() {
+                        migrationRemoved();
+                    });
+                });
+            });
+        });
+    }
+
     /**
      * Perform a migration in the given `direction`.
      *
@@ -194,6 +236,7 @@ function runAirSpringMigrate(options, complete) {
             }
 
             var migrationStorage = results.migrationStorageController;
+
             migrationStorage.getLastMigrationEntry(function (err, migrationsRun) {
                 if (err) {
                     // console.error('Error querying migration collection', err);

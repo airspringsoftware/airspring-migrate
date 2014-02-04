@@ -27,6 +27,7 @@ var usage = [
     '     -c, --chdir <path>          change the working directory',
     '     -cfg, --config <path>       DB config file name',
     '     -sc    --scripts <path>    change the path to the script folder',
+    '     -F    -FORCE    clears the migration collection before running migrations up forcing all migrations to run again',
     '',
     '  Commands:',
     '',
@@ -121,6 +122,10 @@ while (args.length) {
         case '-sc':
         case '--scripts':
             options.scripts = required();
+            break;
+        case '-F':
+        case '--FORCE':
+            options.force = true;
             break;
         default:
             if (options.command) {

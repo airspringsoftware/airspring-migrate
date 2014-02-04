@@ -1,6 +1,6 @@
 {
     "name": "airspring-migrate",
-    "version": "0.0.10",
+    "version": "0.0.11",
     "description": "Migration framework for mongo in node",
     "keywords": [
         "mongo",
