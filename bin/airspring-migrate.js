@@ -13,7 +13,8 @@ var args = process.argv.slice(2);
 var options = { args: [] },
     configFileName = 'default-config.js',
     cwd = process.cwd(),
-    silent = false;
+    silent = false,
+    dbOverride = null;
 
 /**
  * Usage information.
@@ -28,6 +29,7 @@ var usage = [
     '     -cfg, --config <path>       DB config file name',
     '     -sc    --scripts <path>    change the path to the script folder',
     '     -F    -FORCE    clears the migration collection before running migrations up forcing all migrations to run again',
+    '     -db    --database   overrides the value in the config file for database name',
     '',
     '  Commands:',
     '',
@@ -123,6 +125,10 @@ while (args.length) {
         case '--scripts':
             options.scripts = required();
             break;
+        case 'db':
+        case '--database':
+            dbOverride = required();
+            break;
         case '-F':
         case '--FORCE':
             options.force = true;
@@ -138,6 +144,7 @@ while (args.length) {
 
 options.config = new (require((options.cwd || process.cwd()) + path.sep + configFileName))();
 options.log = log;
+if (dbOverride) options.config.db = dbOverride;
 
 migrate.run(options, function (err) {
     if (err) {
