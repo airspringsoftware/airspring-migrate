@@ -173,6 +173,28 @@ function runAirSpringMigrate(options, complete) {
 
             title = title ? dateString + '-' + title : dateString;
             create(title);
+        },
+        // list migrations that have been ran
+        list: function () {
+            driver.getConnection(config, function (err, results) {
+                if (err) {
+                    if (_.isFunction(complete)) complete();
+                    return;
+                }
+                var migrationStorage = results.migrationStorageController;
+                // clear the previous migrations and start again
+                migrationStorage.getAllMigrationEntries(function (err, collection){
+                    if (err) {
+                        if (_.isFunction(complete)) complete(err);
+                        return;
+                    }
+                    _.each(collection, function (migration) {
+                        console.log(migration.title + ' (' + migration.saved_at + ')');
+                    });
+
+                    if (_.isFunction(complete)) complete();
+                });
+            });
         }
     };
 

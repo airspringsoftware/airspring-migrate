@@ -73,7 +73,7 @@ MigrationStorageController.prototype = {
     removeMigrationEntry: function (migration, complete) {
         var storage = this.db.collection(this.storageName);
         storage.findAndModify({
-            query: { num: migration.num },
+            query: { id: migration.id },
             remove: true
         }, function (err, doc) {
             if (err) return complete(err, doc);
