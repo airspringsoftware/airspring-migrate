@@ -35,10 +35,21 @@ var defaultTemplate = '';
 /**
  * Log a keyed message.
  */
-var log = function (key, msg) {
-    console.log('  \033[90m%s :\033[0m \033[36m%s\033[0m', key, msg);
-};
-
+/**
+ * Function which outputs information about the state of the migration process
+ * @param msg
+ * @param error
+ */
+var silent = false;
+function log (key, msg, error) {
+    if (!silent) {
+        if (!error) {
+            console.log('  \033[90m%s :\033[0m \033[36m%s\033[0m', key, msg);
+        } else {
+            console.error(key, msg);
+        }
+    }
+}
 
 /**
  * Slugify the given `str`.
@@ -53,6 +64,8 @@ function runAirSpringMigrate(options, complete) {
     var config = options.config, // Convert the database config file to an object
         driver = config.driver,
         template = typeof config.template === 'undefined' ? defaultTemplate : config.template;
+
+    silent = options.silent;
 
     if (typeof options.cwd !== 'undefined') chdir(options.cwd);
     if (_.isFunction(config.log)) log = config.log; // override the log function
@@ -270,7 +283,8 @@ function runAirSpringMigrate(options, complete) {
                 migrate({
                     migrationScriptResources: results.resources, // Name this better
                     migrationStorageController: results.migrationStorageController,
-                    complete: complete
+                    complete: complete,
+                    log: log
                 });
 
                 migrations(direction, lastMigrationNum, migrateTo).forEach(function(scriptPath){

@@ -10,10 +10,9 @@ var args = process.argv.slice(2);
 /**
  * Option defaults.
  */
-var options = { args: [] },
+var options = { args: [], silent: false },
     configFileName = 'default-config.js',
     cwd = process.cwd(),
-    silent = false,
     dbOverride = null;
 
 /**
@@ -71,7 +70,7 @@ function setWorkingDirectory(dir) {
  * @param value
  */
 function setSilent(value) {
-    silent = value;
+    options.silent = value;
 }
 
 /**
