@@ -1,10 +1,14 @@
-var migrate = require('./lib/migrate'),
+var Logger = require('./lib/logger'),
+    MigrationModel = require('./lib/MigrationModel'),
+    MigrationSet = require('./lib/MigrationSet')
     path = require('path'),
     mongojs = require('mongojs'),
     fs = require('fs'),
     _ = require('underscore'),
     MigrationSpecSupport = require('./MigrationSpecSupport'),
     self = this;
+
+var logger = new Logger();
 
 // Extend Db to give it an exists function so we can determine if a collection exists
 _.extend(mongojs.Database.prototype, {
@@ -24,32 +28,10 @@ var previousWorkingDirectory = process.cwd(),
     scriptsPath = cwd + path.sep + migrationScriptFolder + path.sep,
     migrationFilePattern = /^\d+.*\.js$/;
 
-
-var defaultDriverFileName = 'driver.js';
-
 /**
  * Default migration template.
  */
 var defaultTemplate = '';
-
-/**
- * Log a keyed message.
- */
-/**
- * Function which outputs information about the state of the migration process
- * @param msg
- * @param error
- */
-var silent = false;
-function log (key, msg, error) {
-    if (!silent) {
-        if (!error) {
-            console.log('  \033[90m%s :\033[0m \033[36m%s\033[0m', key, msg);
-        } else {
-            console.error(key, msg);
-        }
-    }
-}
 
 /**
  * Slugify the given `str`.
@@ -65,10 +47,10 @@ function runAirSpringMigrate(options, complete) {
         driver = config.driver,
         template = typeof config.template === 'undefined' ? defaultTemplate : config.template;
 
-    silent = options.silent;
-
     if (typeof options.cwd !== 'undefined') chdir(options.cwd);
-    if (_.isFunction(config.log)) log = config.log; // override the log function
+    if (_.isFunction(config.logger)) logger = config.logger; // override the log function
+
+    logger.silent = options.silent;
 
     if (typeof options.scripts !== 'undefined') scriptsPath = options.scripts;
     if (scriptsPath.substr(scriptsPath.length-1) !== path.sep) scriptsPath += path.sep;
@@ -92,7 +74,7 @@ function runAirSpringMigrate(options, complete) {
                     isRunnable = formatCorrect && isDirectionUp ? migrationNum > lastMigrationNum : migrationNum <= lastMigrationNum;
 
                 if (!formatCorrect) {
-                    log('info', '"' + file + '" ignored. Does not match migration naming schema');
+                    logger.log('info', '"' + file + '" ignored. Does not match migration naming schema');
                 }
 
                 return formatCorrect && isRunnable;
@@ -202,7 +184,7 @@ function runAirSpringMigrate(options, complete) {
                         return;
                     }
                     _.each(collection, function (migration) {
-                        console.log(migration.title + ' (' + migration.saved_at + ')');
+                        logger.log(migration.title + ' (' + migration.saved_at + ')');
                     });
 
                     if (_.isFunction(complete)) complete();
@@ -218,13 +200,13 @@ function runAirSpringMigrate(options, complete) {
      */
     function create(name) {
         var fullPath = scriptsPath + name + '.js';
-        log('create', fullPath);
+        logger.log('create', fullPath);
         fs.writeFileSync(fullPath, template);
         if (_.isFunction(complete)) complete();
     }
 
     function clearMigrations(complete) {
-        log('clear', 'migrations collection');
+        logger.log('clear', 'migrations collection');
         driver.getConnection(config, function (err, results) {
             var migrationStorage = results.migrationStorageController;
             if (err) {
@@ -248,7 +230,7 @@ function runAirSpringMigrate(options, complete) {
                 });
 
                 _.each(collection, function (m) {
-                    log('remove', 'migration ' + m.title);
+                    logger.log('remove', 'migration ' + m.title);
                     migrationStorage.removeMigrationEntry(m, function() {
                         migrationRemoved();
                     });
@@ -272,6 +254,9 @@ function runAirSpringMigrate(options, complete) {
 
             var migrationStorage = results.migrationStorageController;
 
+
+            var migrationSet = new MigrationSet(results.resources, results.migrationStorageController, logger, complete);
+
             migrationStorage.getLastMigrationEntry(function (err, migrationsRun) {
                 if (err) {
                     // console.error('Error querying migration collection', err);
@@ -280,25 +265,14 @@ function runAirSpringMigrate(options, complete) {
 
                 var lastMigration = migrationsRun,
                     lastMigrationNum = lastMigration ? lastMigration.num : 0;
-                migrate({
-                    migrationScriptResources: results.resources, // Name this better
-                    migrationStorageController: results.migrationStorageController,
-                    complete: complete,
-                    log: log
-                });
+
 
                 var migrationList = migrations(direction, lastMigrationNum, migrateTo);
                 if (migrationList) {
                     migrationList.forEach(function(scriptPath){
                         var mod = require(path.resolve(cwd, scriptPath)); // Import the migration file
                         var fileName = path.basename(scriptPath);
-
-                        migrate({
-                            num: getMigrationNum(fileName),
-                            title: fileName,
-                            up: mod.up,
-                            down: mod.down
-                        });
+                        migrationSet.migrations.push(new MigrationModel(fileName, mod.up, mod.down, getMigrationNum(fileName)));
                     });
                 }
                 //Revert working directory to previous state
@@ -307,23 +281,22 @@ function runAirSpringMigrate(options, complete) {
                 if (!_.isFunction(complete)) {
                     complete = function(err) {
                         if (err) {
-                            log('Error', err, true);
+                            logger.log('Error', err, true);
                             throw new Error(err);
                         }
                     };
                 }
-                var set = migrate({ complete: complete });
 
-                set.on('migration', function(migration, direction){
-                    log(direction, migration.title);
+                migrationSet.on('migration', function(migration, direction){
+                    logger.log(direction, migration.title);
                 });
 
-                set.on('save', function(){
-                    log('migration', 'complete');
+                migrationSet.on('save', function(){
+                    logger.log('migration', 'complete');
                     if (_.isFunction(complete)) complete();
                 });
 
-                set[direction](null, lastMigrationNum);
+                migrationSet[direction](null, lastMigrationNum);
             });
         });
     }
@@ -343,7 +316,7 @@ function runAirSpringMigrate(options, complete) {
  */
 function abort(msg, complete) {
     if (_.isFunction(complete)) return complete(msg);
-    log('error', msg, true);
+    logger.log('error', msg, true);
     //console.error('  %s', msg);
     //process.exit(1);
 }

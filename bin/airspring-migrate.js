@@ -74,21 +74,6 @@ function setSilent(value) {
 }
 
 /**
- * Function which outputs information about the state of the migration process
- * @param msg
- * @param error
- */
-function log (key, msg, error) {
-    if (!options.silent) {
-        if (!error) {
-            console.log('  \033[90m%s :\033[0m \033[36m%s\033[0m', key, msg);
-        } else {
-            console.error(key, msg);
-        }
-    }
-}
-
-/**
  * abort with a message
  * @param msg
  */
@@ -142,7 +127,7 @@ while (args.length) {
 }
 
 options.config = new (require((options.cwd || process.cwd()) + path.sep + configFileName))();
-options.log = log;
+
 if (dbOverride) options.config.db = dbOverride;
 
 migrate.run(options, function (err) {
