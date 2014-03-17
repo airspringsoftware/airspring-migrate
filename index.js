@@ -287,18 +287,20 @@ function runAirSpringMigrate(options, complete) {
                     log: log
                 });
 
-                migrations(direction, lastMigrationNum, migrateTo).forEach(function(scriptPath){
-                    var mod = require(path.resolve(cwd, scriptPath)); // Import the migration file
-                    var fileName = path.basename(scriptPath);
+                var migrationList = migrations(direction, lastMigrationNum, migrateTo);
+                if (migrationList) {
+                    migrationList.forEach(function(scriptPath){
+                        var mod = require(path.resolve(cwd, scriptPath)); // Import the migration file
+                        var fileName = path.basename(scriptPath);
 
-                    migrate({
-                        num: getMigrationNum(fileName),
-                        title: fileName,
-                        up: mod.up,
-                        down: mod.down
+                        migrate({
+                            num: getMigrationNum(fileName),
+                            title: fileName,
+                            up: mod.up,
+                            down: mod.down
+                        });
                     });
-                });
-
+                }
                 //Revert working directory to previous state
                 process.chdir(previousWorkingDirectory);
 
@@ -340,7 +342,8 @@ function runAirSpringMigrate(options, complete) {
  * @param msg
  */
 function abort(msg, complete) {
-    if (_.isFunction(complete)) complete(msg);
+    if (_.isFunction(complete)) return complete(msg);
+    log('error', msg, true);
     //console.error('  %s', msg);
     //process.exit(1);
 }
