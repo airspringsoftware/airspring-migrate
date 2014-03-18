@@ -48,8 +48,7 @@ function runAirSpringMigrate(options, complete) {
         template = typeof config.template === 'undefined' ? defaultTemplate : config.template;
 
     if (typeof options.cwd !== 'undefined') chdir(options.cwd);
-    if (_.isFunction(config.logger)) logger = config.logger; // override the log function
-
+    if (config.logger) logger = config.logger; // override the log function
     logger.silent = options.silent;
 
     if (typeof options.scripts !== 'undefined') scriptsPath = options.scripts;
