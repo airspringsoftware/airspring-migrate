@@ -180,11 +180,6 @@ describe('test programmatic functionality', function () {
                     runCreateModule(++i);
                 });
             } else {
-                options = {
-                    config: config,
-                    args: []
-                };
-
                 migration.run('up', [] , false, function (err) {
                     expect(err).toBeFalsy();
                     migration.run('down', [], false, function (err) {
