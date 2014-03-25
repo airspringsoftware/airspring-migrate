@@ -47,7 +47,7 @@ while (args.length) {
         case '--help':
         case 'help':
             console.log(usage);
-            process.exit();
+            processComplete();
             break;
         case '-c':
         case '--chdir':
@@ -82,19 +82,48 @@ while (args.length) {
     }
 }
 
+// default command
+if (!command) command = 'up';
+
 // Initialize the configuration object
 options.config = new (require((options.cwd || process.cwd()) + path.sep + configFileName))();
 // override db
 if (dbOverride) options.config.db = dbOverride;
 
 var migrations = new AirspringMigration(options);
-migrations.run(command, arguments, force, function (err) {
+
+var down = false;
+switch (command) {
+    case 'create':
+        migrations.createScript(arguments[0]);
+        processComplete();
+        break;
+    case 'list':
+        migrations.getAllMigrationStorageEntries(function (collection, err) {
+            if (err) return abort(err, complete);
+            _.each(collection, function (migration) {
+                console.log(migration.title + ' (' + migration.saved_at + ')');
+            });
+           processComplete();
+        });
+        break;
+    case 'down':
+        down = true;
+    case 'up':
+        migrations.run(down, force, arguments[0], processComplete);
+        break;
+    default:
+        abort('unknown command "' + command + '"');
+        break;
+};
+
+// --- Helper functions ---
+
+function processComplete(err) {
     if (err)  return abort(err);
     // success
     process.exit();
-});
-
-// --- Helper functions ---
+}
 
 // pulls the next arg off the stack (aborts if missing)
 function requiredArg() {

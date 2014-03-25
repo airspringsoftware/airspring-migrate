@@ -174,14 +174,12 @@ describe('test that migrations ran programmatically', function () {
     var createFourMigrations = function (complete) {
         var _runCreateModule = function (i) {
             if (i < 4) {
-                migration.run('create', ['test' + i], false, function (err) {
-                    expect(err).toBeFalsy();
-                    expect(support.fileExists('./' + migrationFolderName, '^(\\d{14}[-])test'  + i +  '.js')).toBe(true);
-                    // delay one second between creates to ensure a new time stamp is created
-                    setTimeout(function () {
-                        _runCreateModule(++i);
-                    }, 1000);
-                });
+                migration.createScript('test' + i);
+                expect(support.fileExists('./' + migrationFolderName, '^(\\d{14}[-])test'  + i +  '.js')).toBe(true);
+                // delay one second between creates to ensure a new time stamp is created
+                setTimeout(function () {
+                    _runCreateModule(++i);
+                }, 1000);
             } else {
                 complete();
             }
@@ -192,7 +190,7 @@ describe('test that migrations ran programmatically', function () {
 
     it ('can get the first and last migration', function (done) {
         createFourMigrations(function () {
-            migration.run('up', [] , false, function (err) {
+            migration.run(false, false, function (err) {
                 expect(err).toBeFalsy();
                 // check that the last migration corresponds to the last one created
                 migration.getLastMigrationStorageEntry(function (err, entry) {
@@ -227,9 +225,9 @@ describe('test that migrations ran programmatically', function () {
 
     it('can run using and extended driver and config files', function (done) {
         createFourMigrations(function () {
-            migration.run('up', [] , false, function (err) {
+            migration.run(false, false, function (err) {
                 expect(err).toBeFalsy();
-                migration.run('down', [], false, function (err) {
+                migration.run(true, false, function (err) {
                     expect(err).toBeFalsy();
                     done();
                 });

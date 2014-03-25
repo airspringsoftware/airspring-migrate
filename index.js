@@ -69,72 +69,50 @@ _.extend(AirspringMigration.prototype, {
         if (_.isFunction(complete)) return complete(msg);
         this.logger.log('error', msg, true);
     },
-    run: function (command, args, force, complete) {
+    run: function (down, force, migrateTo, complete) {
+        // allow migrteTo to be optional
+        if (_.isFunction(migrateTo)) {
+            complete = migrateTo;
+            migrateTo = null;
+        }
+
         var self = this;
         var performMigration = _.bind(_performMigration, this);
 
-        // --- Commands ---
-        var commands = {
-            up: function(migrateTo){
-                if (force) {
-                    self.clearMigrations(function(err) {
-                        if (err) return self.abort(err);
-                        performMigration('up', migrateTo, complete);
-                    });
-                } else {
-                    performMigration('up', migrateTo, complete);
-                }
-            },
-            down: function(migrateTo){
-               performMigration('down', migrateTo, complete);
-            },
-            create: function() {
-                var currDate = new Date(),
-                    title = slugify([].slice.call(arguments).join(' '));
-                var dateString = currDate.getFullYear() +
-                    padString('00', (currDate.getMonth() + 1)) +
-                    padString('00', currDate.getDate()) +
-                    padString('00', currDate.getHours()) +
-                    padString('00', currDate.getMinutes()) +
-                    padString('00', currDate.getSeconds());
-
-                title = title ? dateString + '-' + title : dateString;
-                self.create(title);
-
-                if (_.isFunction(complete)) complete();
-            },
-            // list migrations that have been ran
-            list: function () {
-                this.getAllMigrationEntries(function (collection, err) {
-                    if (err) return self.abort(err, complete);
-                    _.each(collection, function (migration) {
-                        self.logger.log(migration.title + ' (' + migration.saved_at + ')');
-                    });
-
-                    if (_.isFunction(complete)) complete();
-                });
-            }
-        };
-        // --- End Helpers ---
-
         // create scripts folder
-        try { fs.mkdirSync(scriptsPath, 0774); } catch (err) {}
+        try { fs.mkdirSync(this.scriptsPath, 0774); } catch (err) {}
 
-        // invoke command
-        command = command || 'up';
-        if (!_.has(commands, command)) {
-            return this.abort('unknown command "' + command + '"', complete);
+        if (down) {
+            performMigration('down', migrateTo, complete);
+        } else {
+            if (force) {
+                self.clearMigrations(function(err) {
+                    if (err) return self.abort(err);
+                    performMigration('up', migrateTo, complete);
+                });
+            } else {
+                performMigration('up', migrateTo, complete);
+            }
         }
-        command = commands[command];
-        command.apply(this, args, complete);
     },
     /**
      * Create a migration with the given `name`.
      *
      * @param {String} name
      */
-    create: function (name) {
-        var fullPath = this.scriptsPath + name + '.js';
+    createScript: function (title) {
+        var currDate = new Date(),
+            title = slugify([].slice.call(arguments).join(' '));
+        var dateString = currDate.getFullYear() +
+            padString('00', (currDate.getMonth() + 1)) +
+            padString('00', currDate.getDate()) +
+            padString('00', currDate.getHours()) +
+            padString('00', currDate.getMinutes()) +
+            padString('00', currDate.getSeconds());
+
+        title = title ? dateString + '-' + title : dateString;
+
+        var fullPath = this.scriptsPath + title + '.js';
         this.logger.log('create', fullPath);
         fs.writeFileSync(fullPath, this.template);
     },
@@ -149,7 +127,7 @@ _.extend(AirspringMigration.prototype, {
             if (err) return _complete(err);
 
             var migrationStorage = connectionResources.migrationStorageController;
-            self.getAllMigrationEntries(function (collection, err){
+            self.getAllMigrationStorageEntries(function (collection, err){
                 if (err) return _complete(err);
                 if (collection.length <= 0) return _complete();
 
@@ -214,7 +192,7 @@ _.extend(AirspringMigration.prototype, {
      *
      * @param complete callback function
      */
-    getAllMigrationEntries: function (complete) {
+    getAllMigrationStorageEntries: function (complete) {
         var _complete = function (collection, err) {
             if (_.isFunction(complete)) complete(collection, err);
         };
