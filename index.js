@@ -1,3 +1,4 @@
+// resources
 var Logger = require('./lib/logger'),
     MigrationModel = require('./lib/MigrationModel'),
     MigrationSet = require('./lib/MigrationSet')
@@ -8,8 +9,6 @@ var Logger = require('./lib/logger'),
     MigrationSpecSupport = require('./MigrationSpecSupport'),
     self = this;
 
-var logger = new Logger();
-
 // Extend Db to give it an exists function so we can determine if a collection exists
 _.extend(mongojs.Database.prototype, {
     exists: function (collectionName, complete) {
@@ -19,61 +18,199 @@ _.extend(mongojs.Database.prototype, {
     }
 });
 
-/**
- * Current working directory.
- */
+// exports
+module.exports = {
+    AirspringMigration: AirspringMigration,
+    Driver: require(__dirname + '/driver.js'),
+    MigrationStorageController: require(__dirname + '/MigrationStorageController.js'),
+    Configuration: require(__dirname + '/default-config.js'),
+    mongojs: mongojs,
+    MigrationSpecSupport: MigrationSpecSupport
+};
+
 var previousWorkingDirectory = process.cwd(),
     cwd = process.cwd(),
     migrationScriptFolder = 'scripts',
-    scriptsPath = cwd + path.sep + migrationScriptFolder + path.sep,
+    // default migration template
+    defaultTemplate = '',
     migrationFilePattern = /^\d+.*\.js$/;
 
-/**
- * Default migration template.
- */
-var defaultTemplate = '';
-
-/**
- * Slugify the given `str`.
- */
-function slugify(str) {
-    return str.replace(/\s+/g, '-');
-}
-
-function runAirSpringMigrate(options, complete) {
+function AirspringMigration (options) {
     if (typeof options === 'undefined') options = { args: [] };
 
-    var config = options.config, // Convert the database config file to an object
-        driver = config.driver,
-        template = typeof config.template === 'undefined' ? defaultTemplate : config.template;
+    var config = options.config;
+    this.driver = config.driver;
+
+    this.template = typeof config.template === 'undefined' ? defaultTemplate : config.template;
 
     if (typeof options.cwd !== 'undefined') chdir(options.cwd);
-    if (config.logger) logger = config.logger; // override the log function
-    logger.silent = options.silent;
 
-    if (typeof options.scripts !== 'undefined') scriptsPath = options.scripts;
-    if (scriptsPath.substr(scriptsPath.length-1) !== path.sep) scriptsPath += path.sep;
+    if (config.logger) this.logger = config.logger; // override the logger object
+    else this.logger = new Logger();
 
+    this.logger.silent = options.silent;
+
+    this.scriptsPath = cwd + path.sep + migrationScriptFolder + path.sep;
+
+    if (typeof options.scripts !== 'undefined') this.scriptsPath = options.scripts;
+
+    // make sure script path ends in path separator
+    if (this.scriptsPath.substr(this.scriptsPath.length-1) !== path.sep) this.scriptsPath += path.sep;
+
+    this.config = config;
+}
+
+_.extend(AirspringMigration.prototype, {
     /**
-     * Load migrations.
-     * @param {String} direction
-     * @param {Number} lastMigrationNum
-     * @param {Number} migrateTo
+     * abort with a message
+     * @param msg
      */
-    function migrations(direction, lastMigrationNum, migrateTo) {
+    abort: function (msg, complete) {
+        if (_.isFunction(complete)) return complete(msg);
+        this.logger.log('error', msg, true);
+    },
+    run: function (command, args, force, complete) {
+        var self = this;
+        var performMigration = _.bind(_performMigration, this);
+
+        // --- Commands ---
+        var commands = {
+            up: function(migrateTo){
+                if (force) {
+                    self.clearMigrations(function(err) {
+                        if (err) return self.abort(err);
+                        performMigration('up', migrateTo, complete);
+                    });
+                } else {
+                    performMigration('up', migrateTo, complete);
+                }
+            },
+            down: function(migrateTo){
+               performMigration('down', migrateTo, complete);
+            },
+            create: function() {
+                var currDate = new Date(),
+                    title = slugify([].slice.call(arguments).join(' '));
+                var dateString = currDate.getFullYear() +
+                    padString('00', (currDate.getMonth() + 1)) +
+                    padString('00', currDate.getDate()) +
+                    padString('00', currDate.getHours()) +
+                    padString('00', currDate.getMinutes()) +
+                    padString('00', currDate.getSeconds());
+
+                title = title ? dateString + '-' + title : dateString;
+                self.create(title);
+
+                if (_.isFunction(complete)) complete();
+            },
+            // list migrations that have been ran
+            list: function () {
+                this.getCurrentState(function (collection, err) {
+                    if (err) return self.abort(err, complete);
+                    _.each(collection, function (migration) {
+                        self.logger.log(migration.title + ' (' + migration.saved_at + ')');
+                    });
+
+                    if (_.isFunction(complete)) complete();
+                });
+            }
+        };
+        // --- End Helpers ---
+
+        // create scripts folder
+        try { fs.mkdirSync(scriptsPath, 0774); } catch (err) {}
+
+        // invoke command
+        command = command || 'up';
+        if (!_.has(commands, command)) {
+            return this.abort('unknown command "' + command + '"', complete);
+        }
+        command = commands[command];
+        command.apply(this, args, complete);
+    },
+    /**
+     * Create a migration with the given `name`.
+     *
+     * @param {String} name
+     */
+    create: function (name) {
+        var fullPath = this.scriptsPath + name + '.js';
+        this.logger.log('create', fullPath);
+        fs.writeFileSync(fullPath, this.template);
+    },
+    clearMigrations: function (complete) {
+        var self = this;
+        var _complete = function(err) {
+            if (_.isFunction(complete)) complete(err);
+        };
+
+        this.logger.log('clear', 'migrations collection');
+        this.getConnection(function (err, connectionResources) {
+            if (err) return _complete(err);
+
+            var migrationStorage = connectionResources.migrationStorageController;
+            self.getCurrentState(function (collection, err){
+                if (err) return _complete(err);
+                if (collection.length <= 0) return _complete();
+
+                var migrationRemoved = _.after(collection.length, function() {
+                    _complete();
+                });
+
+                _.each(collection, function (m) {
+                    self.logger.log('remove', 'migration ' + m.title);
+                    migrationStorage.removeMigrationEntry(m, function() {
+                        migrationRemoved();
+                    });
+                });
+            });
+        })
+    },
+    getConnection: function (complete) {
+        if (this.connectionResources) return complete(this.connectionResources);
+
+        var self = this;
+        this.driver.getConnection(this.config, function (err, results) {
+                if (err) return complete(null, err);
+                self.connectionResources = results;
+                complete(self.connectionResources);
+        });
+    },
+    /**
+     * Returns a list of all migration that have currently been ran against this db
+     *
+     * @param complete callback function
+     */
+    getCurrentState: function (complete) {
+        var _complete = function (collection, err) {
+            if (_.isFunction(complete)) complete(collection, err);
+        };
+
+        this.getConnection(function (results, err) {
+            if (err) return _complete(null, err);
+
+            var migrationStorage = results.migrationStorageController;
+            migrationStorage.getAllMigrationEntries(function (err, collection) {
+                _complete(collection, err);
+            });
+        });
+    },
+    getMigrationsToRun: function (direction, lastMigrationNum, migrateTo, processComplete) {
+        var self = this;
+
         var isDirectionUp = direction === 'up',
             hasMigrateTo = !!migrateTo,
             migrateToNum = hasMigrateTo ? parseInt(migrateTo, 10) : undefined,
             migrateToFound = !hasMigrateTo;
 
-        var migrationsToRun = fs.readdirSync(scriptsPath)
+        var migrationsToRun = fs.readdirSync(this.scriptsPath)
             .filter(function (file) {
                 var formatCorrect = file.match(migrationFilePattern),
                     migrationNum = formatCorrect && getMigrationNum(file),
                     isRunnable = formatCorrect && isDirectionUp ? migrationNum > lastMigrationNum : migrationNum <= lastMigrationNum;
 
                 if (!formatCorrect) {
-                    logger.log('info', '"' + file + '" ignored. Does not match migration naming schema');
+                    self.logger.log('info', '"' + file + '" ignored. Does not match migration naming schema');
                 }
 
                 return formatCorrect && isRunnable;
@@ -108,216 +245,22 @@ function runAirSpringMigrate(options, complete) {
 
                 return formatCorrect && isRunnable;
             }).map(function(file){
-                return scriptsPath + file;
+                return self.scriptsPath + file;
             });
 
         if (!migrateToFound) {
-            if (migrateToNum === lastMigrationNum) return abort('migration `' + migrateTo + '` has already been ran!');
-            return abort('migration `'+ migrateTo + '` not found!', complete);
+            if (migrateToNum === lastMigrationNum) throw new Error('migration `' + migrateTo + '` has already been ran!');
+            throw new Error('migration `'+ migrateTo + '` not found!', processComplete);
         }
 
         return migrationsToRun;
     }
+});
 
-    // create ./migrations
-
-    try {
-        fs.mkdirSync(scriptsPath, 0774);
-    } catch (err) {
-        // ignore
-    }
-
-    // commands
-
-    var commands = {
-        /**
-         * up
-         */
-        up: function(migrateTo){
-            if (options.force) {
-                clearMigrations(function(err) {
-                    if (err) return abort(err);
-
-                    performMigration('up', migrateTo);
-                });
-            } else {
-                performMigration('up', migrateTo);
-            }
-        },
-
-        /**
-         * down
-         */
-        down: function(migrateTo){
-            performMigration('down', migrateTo);
-        },
-
-        /**
-         * create [title]
-         */
-        create: function(){
-            var currDate = new Date(),
-                title = slugify([].slice.call(arguments).join(' '));
-            var dateString = currDate.getFullYear() +
-                padString('00', (currDate.getMonth() + 1)) +
-                padString('00', currDate.getDate()) +
-                padString('00', currDate.getHours()) +
-                padString('00', currDate.getMinutes()) +
-                padString('00', currDate.getSeconds());
-
-            title = title ? dateString + '-' + title : dateString;
-            create(title);
-        },
-        // list migrations that have been ran
-        list: function () {
-            driver.getConnection(config, function (err, results) {
-                if (err) {
-                    if (_.isFunction(complete)) complete();
-                    return;
-                }
-                var migrationStorage = results.migrationStorageController;
-                // clear the previous migrations and start again
-                migrationStorage.getAllMigrationEntries(function (err, collection){
-                    if (err) {
-                        if (_.isFunction(complete)) complete(err);
-                        return;
-                    }
-                    _.each(collection, function (migration) {
-                        logger.log(migration.title + ' (' + migration.saved_at + ')');
-                    });
-
-                    if (_.isFunction(complete)) complete();
-                });
-            });
-        }
-    };
-
-    /**
-     * Create a migration with the given `name`.
-     *
-     * @param {String} name
-     */
-    function create(name) {
-        var fullPath = scriptsPath + name + '.js';
-        logger.log('create', fullPath);
-        fs.writeFileSync(fullPath, template);
-        if (_.isFunction(complete)) complete();
-    }
-
-    function clearMigrations(complete) {
-        logger.log('clear', 'migrations collection');
-        driver.getConnection(config, function (err, results) {
-            var migrationStorage = results.migrationStorageController;
-            if (err) {
-                //console.error('Error connecting to database');
-                if (_.isFunction(complete)) complete(err);
-            }
-
-            // clear the previous migrations and start again
-            migrationStorage.getAllMigrationEntries(function (err, collection){
-                if (err) {
-                    if (_.isFunction(complete)) complete(err);
-                    return;
-                }
-                if (collection.length <= 0) {
-                    if (_.isFunction(complete)) complete();
-                    return;
-                }
-
-                var migrationRemoved = _.after(collection.length, function() {
-                    if (_.isFunction(complete)) complete();
-                });
-
-                _.each(collection, function (m) {
-                    logger.log('remove', 'migration ' + m.title);
-                    migrationStorage.removeMigrationEntry(m, function() {
-                        migrationRemoved();
-                    });
-                });
-            });
-        });
-    }
-
-    /**
-     * Perform a migration in the given `direction`.
-     *
-     * @param {String} direction
-     */
-    function performMigration(direction, migrateTo) {
-
-        driver.getConnection(config, function (err, results) {
-            if (err) {
-                //console.error('Error connecting to database');
-                return abort(err, complete);
-            }
-
-            var migrationStorage = results.migrationStorageController;
-
-
-            var migrationSet = new MigrationSet(results.resources, results.migrationStorageController, logger, complete);
-
-            migrationStorage.getLastMigrationEntry(function (err, migrationsRun) {
-                if (err) {
-                    // console.error('Error querying migration collection', err);
-                    return abort(err, complete);
-                }
-
-                var lastMigration = migrationsRun,
-                    lastMigrationNum = lastMigration ? lastMigration.num : 0;
-
-
-                var migrationList = migrations(direction, lastMigrationNum, migrateTo);
-                if (migrationList) {
-                    migrationList.forEach(function(scriptPath){
-                        var mod = require(path.resolve(cwd, scriptPath)); // Import the migration file
-                        var fileName = path.basename(scriptPath);
-                        migrationSet.migrations.push(new MigrationModel(fileName, mod.up, mod.down, getMigrationNum(fileName)));
-                    });
-                }
-                //Revert working directory to previous state
-                process.chdir(previousWorkingDirectory);
-
-                if (!_.isFunction(complete)) {
-                    complete = function(err) {
-                        if (err) {
-                            logger.log('Error', err, true);
-                            throw new Error(err);
-                        }
-                    };
-                }
-
-                migrationSet.on('migration', function(migration, direction){
-                    logger.log(direction, migration.title);
-                });
-
-                migrationSet.on('save', function(){
-                    logger.log('migration', 'complete');
-                    if (_.isFunction(complete)) complete();
-                });
-
-                migrationSet[direction](null, lastMigrationNum);
-            });
-        });
-    }
-
-    // invoke command
-    var command = options.command || 'up';
-    if (!_.has(commands, command)) {
-        return abort('unknown command "' + command + '"', complete);
-    }
-    command = commands[command];
-    command.apply(this, options.args);
-}
-
-/**
- * abort with a message
- * @param msg
- */
-function abort(msg, complete) {
-    if (_.isFunction(complete)) return complete(msg);
-    logger.log('error', msg, true);
-    //console.error('  %s', msg);
-    //process.exit(1);
+// --- Private Helper Functions ---
+// Slugify the given `str`.
+function slugify(str) {
+    return str.replace(/\s+/g, '-');
 }
 
 function chdir(dir) {
@@ -333,11 +276,65 @@ function padString(pad, str) {
     return pad.substring(0, pad.length - str.length) + str;
 }
 
-module.exports = {
-    run: runAirSpringMigrate,
-    Driver: require(__dirname + '/driver.js'),
-    MigrationStorageController: require(__dirname + '/MigrationStorageController.js'),
-    Configuration: require(__dirname + '/default-config.js'),
-    mongojs: mongojs,
-    MigrationSpecSupport: MigrationSpecSupport
-};
+/**
+ * Perform a migration in the given `direction`.
+ * (use with bind to set this context)
+ *
+ * @param {String} direction
+ */
+function _performMigration (direction, migrateTo, complete) {
+    var self = this;
+
+    this.getConnection(function (results, err) {
+        if (err) return self.abort(err, complete);
+
+        var migrationStorage = results.migrationStorageController,
+            migrationSet = new MigrationSet(results.resources, results.migrationStorageController, self.logger, complete);
+
+        migrationStorage.getLastMigrationEntry(function (err, migrationsRun) {
+            if (err) return self.abort(err, complete);
+
+            var lastMigration = migrationsRun,
+                lastMigrationNum = lastMigration ? lastMigration.num : 0;
+
+            try {
+                var migrationList = self.getMigrationsToRun(direction, lastMigrationNum, migrateTo);
+            } catch (ex) {
+                return self.abort(ex, complete);
+            }
+
+            if (migrationList) {
+                migrationList.forEach(function(scriptPath){
+                    var mod = require(path.resolve(cwd, scriptPath)), // Import the migration file
+                        fileName = path.basename(scriptPath); // resolve the file name of the migration
+
+                    migrationSet.migrations.push(new MigrationModel(fileName, mod.up, mod.down, getMigrationNum(fileName)));
+                });
+            }
+            //Revert working directory to previous state
+            process.chdir(previousWorkingDirectory);
+
+            if (!_.isFunction(complete)) {
+                complete = function(err) {
+                    if (err) {
+                        self.logger.log('Error', err, true);
+                        throw new Error(err);
+                    }
+                };
+            }
+
+            migrationSet.on('migration', function(migration, direction){
+                self.logger.log(direction, migration.title);
+            });
+
+            migrationSet.on('save', function(){
+                self.logger.log('migration', 'complete');
+
+                if (_.isFunction(complete)) complete();
+            });
+
+            migrationSet[direction](null, lastMigrationNum);
+        });
+    });
+}
+// --- End Private Helper Function ---

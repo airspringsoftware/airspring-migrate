@@ -93,6 +93,8 @@ _.extend(DataBaseMigrationSpecSupport.prototype, {
     runCreate: function (options) {
         var self = this;
         exec(self.runCommand + ' create ' + options.migrationName, function (error, stdout, stderr) {
+            if (stderr) console.error(stderr);
+
             expect(error).toBeFalsy();
 
             // Check that the create command produced a file

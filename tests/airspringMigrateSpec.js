@@ -1,4 +1,5 @@
 var Migrations = require('../'),
+    AirspringMigratiton = Migrations.AirspringMigration,
     MigrationStorageController = Migrations.MigrationStorageController,
     _ = require('underscore'),
     path = require('path'),
@@ -10,13 +11,12 @@ var Migrations = require('../'),
     migrationFolderName = 'scripts',
     db = new mongojs(dbPath),
     storage = new MigrationStorageController(db),
-    runCommand = 'node ../bin/airspring-migrate.js --config ../default-config.js',
+    runCommand = 'node ../bin/airspring-migrate.js --config ../default-config.js --silent',
     scriptFolder = 'scripts',
     support = new Migrations.MigrationSpecSupport(scriptFolder, runCommand);
 
 // Specify the default timeout
 jasmine.getEnv().defaultTimeoutInterval = 80000;
-
 
 /* ---- Begin Tests ---- */
 describe('test MigrationStorageController', function () {
@@ -68,10 +68,6 @@ describe('test command line functionality,', function () {
             db.exists(migrationName, function (err, exists) {
                 expect(err).toBeFalsy();
                 expect(exists).toBe(false);
-                if (exists === true) {
-                    console.log(migrationName);
-                    var str = '';
-                }
                 afterExists();
             });
         });
@@ -85,6 +81,9 @@ describe('test command line functionality,', function () {
         function testMigrateUp(complete) {
             // Run the migration
             exec(runCommand + ' up', function (error, stdout, stderr) {
+                if (error) console.error(error);
+                if (stderr) console.error(stderr);
+
                 expect(error).toBeFalsy();
                 expect(stderr).toBeFalsy();
 
@@ -112,7 +111,7 @@ describe('test command line functionality,', function () {
             checkInitialConditions(function () {
                 // Run the migrations up and test
                 testMigrateUp(function () {
-                    // Run the migrations down and testß
+                    // Run the migrations down and test
                     testMigrateDown(done);
                 });
             });
@@ -168,18 +167,16 @@ describe('test programmatic functionality', function () {
     });
 
     it('using programmatic migrations and extension of driver and config files', function (done) {
-        var runCreateModule = function (i) {
-            var options = {
-                config: config,
-                command: 'create',
-                args: ['test' + i]
-            };
+        var migration = new AirspringMigratiton({
+            config: config,
+            silent: true
+        });
 
+        var runCreateModule = function (i) {
             if (i < 4) {
-                Migrations.run(options, function (err) {
+                migration.run('create', ['test' + i], false, function (err) {
                     expect(err).toBeFalsy();
                     expect(support.fileExists('./' + migrationFolderName, '^(\\d{14}[-])test'  + i +  '.js')).toBe(true);
-
                     runCreateModule(++i);
                 });
             } else {
@@ -188,15 +185,9 @@ describe('test programmatic functionality', function () {
                     args: []
                 };
 
-                Migrations.run(options, function (err) {
+                migration.run('up', [] , false, function (err) {
                     expect(err).toBeFalsy();
-
-                    options = {
-                        config: config,
-                        command: 'down',
-                        args: []
-                    };
-                    Migrations.run(options, function (err) {
+                    migration.run('down', [], false, function (err) {
                         expect(err).toBeFalsy();
                         done();
                     });

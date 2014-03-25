@@ -1,23 +1,18 @@
 #!/usr/bin/env node
-var migrate = require('../'),
-    path = require('path');
+var AirspringMigration = require('../').AirspringMigration,
+    path = require('path'),
+    Logger = require('../lib/logger');
 
-/**
- * Arguments.
- */
-var args = process.argv.slice(2);
+// default logger
+var logger = new Logger();
 
-/**
- * Option defaults.
- */
-var options = { args: [], silent: false },
+// option defaults
+var options = { silent: false },
     configFileName = 'default-config.js',
     cwd = process.cwd(),
     dbOverride = null;
 
-/**
- * Usage information.
- */
+// usage information message
 var usage = [
     '',
     '  Usage: airspring-migrate [options] [command]',
@@ -38,52 +33,13 @@ var usage = [
     ''
 ].join('\n');
 
-
-/**
- * require an argument
- * @returns {*}
- */
-function required() {
-    if (args.length) return args.shift();
-    abort(arg + ' requires an argument');
-}
-
-/**
- * change the configuration filename that will be imported when running from the command line
- * @param filename
- */
-function setConfigFilename(filename) {
-    configFileName = filename;
-}
-
-
-/**
- * Change the current working directory under which the script is executed
- * @param dir
- */
-function setWorkingDirectory(dir) {
-    options.cwd = dir;
-}
-
-/**
- * Indicate that the log function should not produce output
- * @param value
- */
-function setSilent(value) {
-    options.silent = value;
-}
-
-/**
- * abort with a message
- * @param msg
- */
-function abort(msg) {
-    log('Error', msg, true);
-    process.exit(1);
-}
-
 // parse arguments
-var arg;
+var arg,
+    arguments = [],
+    command = null,
+    force = false;
+
+var args = process.argv.slice(2);
 while (args.length) {
     arg = args.shift();
     switch (arg) {
@@ -95,46 +51,60 @@ while (args.length) {
             break;
         case '-c':
         case '--chdir':
-            setWorkingDirectory(required());
+            options.cwd = requiredArg();
             break;
         case '-cfg':
         case '--config':
-            setConfigFilename(required());
+            configFileName = requiredArg();
             break;
         case '-s':
         case '--silent':
-            setSilent(true);
+            options.silent = true;
             break;
         case '-sc':
         case '--scripts':
-            options.scripts = required();
+            options.scripts = requiredArg();
             break;
         case 'db':
         case '--database':
-            dbOverride = required();
+            dbOverride = requiredArg();
             break;
         case '-F':
         case '--FORCE':
-            options.force = true;
+            force = true;
             break;
         default:
-            if (options.command) {
-                options.args.push(arg);
+            if (command) {
+                arguments.push(arg);
             } else {
-                options.command = arg;
+                command = arg;
             }
     }
 }
 
+// Initialize the configuration object
 options.config = new (require((options.cwd || process.cwd()) + path.sep + configFileName))();
-
+// override db
 if (dbOverride) options.config.db = dbOverride;
 
-migrate.run(options, function (err) {
-    if (err) {
-        log('Error', err, true);
-        process.exit(1);
-    }
-
+var migrations = new AirspringMigration(options);
+migrations.run(command, arguments, force, function (err) {
+    if (err)  return abort(err);
+    // success
     process.exit();
 });
+
+// --- Helper functions ---
+
+// pulls the next arg off the stack (aborts if missing)
+function requiredArg() {
+    if (args.length) return args.shift();
+    abort(arg + ' requires an argument');
+}
+// logs the error and aborts the process
+function abort(msg) {
+    logger.log('error', msg, true);
+    process.exit(1);
+}
+
+// --- End Helper functions ---
