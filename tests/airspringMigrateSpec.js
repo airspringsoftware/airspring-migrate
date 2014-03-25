@@ -161,36 +161,80 @@ describe('test command line functionality,', function () {
 });
 
 
-describe('test programmatic functionality', function () {
+describe('test that migrations ran programmatically', function () {
     afterEach(function (done) {
         runAfterEach(done);
     });
 
-    it('using programmatic migrations and extension of driver and config files', function (done) {
-        var migration = new AirspringMigratiton({
-            config: config,
-            silent: true
-        });
+    var migration = new AirspringMigratiton({
+        config: config,
+        silent: true
+    });
 
-        var runCreateModule = function (i) {
+    var createFourMigrations = function (complete) {
+        var _runCreateModule = function (i) {
             if (i < 4) {
                 migration.run('create', ['test' + i], false, function (err) {
                     expect(err).toBeFalsy();
                     expect(support.fileExists('./' + migrationFolderName, '^(\\d{14}[-])test'  + i +  '.js')).toBe(true);
-                    runCreateModule(++i);
+                    // delay one second between creates to ensure a new time stamp is created
+                    setTimeout(function () {
+                        _runCreateModule(++i);
+                    }, 1000);
                 });
             } else {
-                migration.run('up', [] , false, function (err) {
-                    expect(err).toBeFalsy();
-                    migration.run('down', [], false, function (err) {
-                        expect(err).toBeFalsy();
-                        done();
-                    });
-                });
+                complete();
             }
         };
 
-        runCreateModule(0);
+       _runCreateModule(0);
+    };
+
+    it ('can get the first and last migration', function (done) {
+        createFourMigrations(function () {
+            migration.run('up', [] , false, function (err) {
+                expect(err).toBeFalsy();
+                // check that the last migration corresponds to the last one created
+                migration.getLastMigrationStorageEntry(function (err, entry) {
+                    expect(err).toBeFalsy();
+                    expect(entry).toBeTruthy();
+                    expect(entry.title.split('-')[1]).toBe('test3');
+
+                    migration.getFirstMigrationStorageEntry(function (err, entry) {
+                        expect(err).toBeFalsy();
+                        expect(entry).toBeTruthy();
+                        expect(entry.title.split('-')[1]).toBe('test0');
+
+                        done();
+                    });
+                });
+            });
+        });
+    });
+
+    it ('can create a migration storage entry', function (done) {
+        migration.addMigrationStorageEntry({ num: 20140107161818, title: '20140107161818-Created' }, function (err) {
+            expect(err).toBeFalsy();
+            migration.getLastMigrationStorageEntry(function (err, entry){
+                expect(err).toBeFalsy();
+                expect(entry).toBeTruthy();
+                expect(entry.title).toBe('20140107161818-Created');
+
+                done()
+            });
+        });
+    });
+
+    it('can run using and extended driver and config files', function (done) {
+        createFourMigrations(function () {
+            migration.run('up', [] , false, function (err) {
+                expect(err).toBeFalsy();
+                migration.run('down', [], false, function (err) {
+                    expect(err).toBeFalsy();
+                    done();
+                });
+            });
+        });
     });
 
 });

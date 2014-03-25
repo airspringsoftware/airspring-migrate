@@ -105,7 +105,7 @@ _.extend(AirspringMigration.prototype, {
             },
             // list migrations that have been ran
             list: function () {
-                this.getCurrentState(function (collection, err) {
+                this.getAllMigrationEntries(function (collection, err) {
                     if (err) return self.abort(err, complete);
                     _.each(collection, function (migration) {
                         self.logger.log(migration.title + ' (' + migration.saved_at + ')');
@@ -149,7 +149,7 @@ _.extend(AirspringMigration.prototype, {
             if (err) return _complete(err);
 
             var migrationStorage = connectionResources.migrationStorageController;
-            self.getCurrentState(function (collection, err){
+            self.getAllMigrationEntries(function (collection, err){
                 if (err) return _complete(err);
                 if (collection.length <= 0) return _complete();
 
@@ -166,6 +166,17 @@ _.extend(AirspringMigration.prototype, {
             });
         })
     },
+    getMigrationStorageController: function (complete) {
+        if (!_.isFunction(complete)) return;
+        if (this.migrationStorageController) return complete(this.migrationStorageController);
+        var self = this;
+        this.getConnection(function (connection, err) {
+            if (err) return complete(null, err);
+
+            self.migrationStorageController = connection.migrationStorageController;
+            complete(self.migrationStorageController);
+        });
+    },
     getConnection: function (complete) {
         if (this.connectionResources) return complete(this.connectionResources);
 
@@ -176,12 +187,34 @@ _.extend(AirspringMigration.prototype, {
                 complete(self.connectionResources);
         });
     },
+    addMigrationStorageEntry: function (migration, complete) {
+        if (!_.isFunction(complete)) return;
+        this.getMigrationStorageController(function (controller, err) {
+            if (err) return complete(null, err);
+
+            controller.addMigrationEntry(migration, complete);
+        });
+    },
+    getFirstMigrationStorageEntry: function (complete) {
+        if (!_.isFunction(complete)) return;
+        this.getMigrationStorageController(function (controller, err) {
+            if (err) return complete(null, err);
+            controller.getFirstMigrationEntry(complete);
+        });
+    },
+    getLastMigrationStorageEntry: function (complete) {
+        if (!_.isFunction(complete)) return;
+        this.getMigrationStorageController(function (controller, err) {
+            if (err) return complete(null, err);
+            controller.getLastMigrationEntry(complete);
+        });
+    },
     /**
      * Returns a list of all migration that have currently been ran against this db
      *
      * @param complete callback function
      */
-    getCurrentState: function (complete) {
+    getAllMigrationEntries: function (complete) {
         var _complete = function (collection, err) {
             if (_.isFunction(complete)) complete(collection, err);
         };
