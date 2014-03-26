@@ -7,7 +7,7 @@ var AirspringMigration = require('../').AirspringMigration,
 var logger = new Logger();
 
 // option defaults
-var options = { silent: false },
+var options = { silent: false, clTriggered: true },
     configFileName = 'default-config.js',
     cwd = process.cwd(),
     dbOverride = null;

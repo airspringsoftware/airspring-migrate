@@ -38,7 +38,12 @@ var previousWorkingDirectory = process.cwd(),
 function AirspringMigration (options) {
     if (typeof options === 'undefined') options = { args: [] };
 
+    // convenience flag to determine if the command line instantiated the framework
+    this.clTriggered = !!!options.clTriggered;
+
+    // configuration object (default-config)
     var config = options.config;
+    // driver set by config file
     this.driver = config.driver;
 
     this.template = typeof config.template === 'undefined' ? defaultTemplate : config.template;
@@ -163,7 +168,7 @@ _.extend(AirspringMigration.prototype, {
                 if (err) return complete(null, err);
                 self.connectionResources = results;
                 complete(self.connectionResources);
-        });
+        }, this.clTriggered);
     },
     addMigrationStorageEntry: function (migration, complete) {
         if (!_.isFunction(complete)) return;
