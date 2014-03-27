@@ -39,7 +39,7 @@ function AirspringMigration (options) {
     if (typeof options === 'undefined') options = { args: [] };
 
     // convenience flag to determine if the command line instantiated the framework
-    this.clTriggered = !!!options.clTriggered;
+    this.clTriggered = !!options.clTriggered;
 
     // configuration object (default-config)
     var config = options.config;
