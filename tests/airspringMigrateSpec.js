@@ -11,7 +11,7 @@ var Migrations = require('../'),
     migrationFolderName = 'scripts',
     db = new mongojs(dbPath),
     storage = new MigrationStorageController(db),
-    runCommand = 'node ../bin/airspring-migrate.js --config ../default-config.js --silent',
+    runCommand = 'node ../bin/airspring-migrate.js --config ../default-config.js ',
     scriptFolder = 'scripts',
     support = new Migrations.MigrationSpecSupport(scriptFolder, runCommand);
 
@@ -158,6 +158,30 @@ describe('test command line functionality,', function () {
             });
         });
     });
+
+    it('migrations can be forced to run up', function (done) {
+        var cleanOut = /\[[0-9]+m/g;
+        createMigrations(function () {
+           exec(runCommand + ' up', function(error, stdout, stderr) {
+               stdout = stdout.replace(cleanOut, '');
+               expect(error).toBeFalsy();
+               expect(stderr).toBeFalsy();
+               expect(/up\s:[\D]*\d{14}\-test1.js/.test(stdout)).toBe(true);
+               expect(/up\s:[\D]*\d{14}\-test2.js/.test(stdout)).toBe(true);
+               expect(/up\s:[\D]*\d{14}\-test3.js/.test(stdout)).toBe(true);
+
+               exec(runCommand + ' up --FORCE', function (err, stdout, stderr) {
+                   stdout = stdout.replace(cleanOut, '');
+                   expect(error).toBeFalsy();
+                   expect(stderr).toBeFalsy();
+                   expect(/up\s:[\D]*\d{14}\-test1.js/.test(stdout)).toBe(true);
+                   expect(/up\s:[\D]*\d{14}\-test2.js/.test(stdout)).toBe(true);
+                   expect(/up\s:[\D]*\d{14}\-test3.js/.test(stdout)).toBe(true);
+                   done();
+               });
+           });
+       });
+    });
 });
 
 
@@ -249,4 +273,3 @@ function runAfterEach (done) {
         }
     });
 }
-

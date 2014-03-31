@@ -128,7 +128,7 @@ _.extend(AirspringMigration.prototype, {
         };
 
         this.logger.log('clear', 'migrations collection');
-        this.getConnection(function (err, connectionResources) {
+        this.getConnection(function (connectionResources, err) {
             if (err) return _complete(err);
 
             var migrationStorage = connectionResources.migrationStorageController;
