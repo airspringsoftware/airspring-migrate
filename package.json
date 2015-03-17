@@ -23,7 +23,7 @@
     },
     "dependencies": {
         "underscore": "1.5.2",
-        "mongojs": "0.9.11"
+        "mongojs": "0.18.x"
     },
     "main": "index.js",
     "engines": {
